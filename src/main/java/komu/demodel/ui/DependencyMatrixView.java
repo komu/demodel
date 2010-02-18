@@ -26,14 +26,16 @@ import komu.demodel.domain.Module;
 
 public class DependencyMatrixView extends JComponent {
 
-    private DependencyModel model;
+    private static final long serialVersionUID = 1L;
+    
+    private final DependencyModel model;
     private Module selectedModule;
-    private Font headerFont = new Font("dialog", Font.BOLD, 12);
-    private Font gridFont = new Font("dialog", Font.PLAIN, 11);
-    private Color headerBackground = new Color(200, 200, 255);
-    private Color headerBackgroundSelected = new Color(200, 200, 255).brighter();
-    private Color gridColor = new Color(100, 100, 140);
-    private Color violationColor = Color.RED;
+    private final Font headerFont = new Font("dialog", Font.BOLD, 12);
+    private final Font gridFont = new Font("dialog", Font.PLAIN, 11);
+    private final Color headerBackground = new Color(200, 200, 255);
+    private final Color headerBackgroundSelected = new Color(200, 200, 255).brighter();
+    private final Color gridColor = new Color(100, 100, 140);
+    private final Color violationColor = Color.RED;
     
     public DependencyMatrixView(DependencyModel model) {
         this.model = model;
