@@ -38,6 +38,8 @@ public class DependencyMatrixView extends JComponent {
     private final Color violationColor = Color.RED;
     
     public DependencyMatrixView(DependencyModel model) {
+        if (model == null) throw new NullPointerException("null model");
+        
         this.model = model;
         
         updatePreferredSize();
@@ -241,14 +243,13 @@ public class DependencyMatrixView extends JComponent {
     private int calculateLeftHeaderWidth() {
         FontMetrics hfm = getFontMetrics(headerFont);
         
-        int leftWidth = 20; // minimum width
+        int leftWidth = 20;
+        int extraWidth = 2 * hfm.stringWidth(" 999");
         
         for (Module module : model.getModules())
             leftWidth = max(leftWidth, hfm.stringWidth(module.getName()));            
         
-        // Add some extra to leftwidth
-        //return leftWidth + 2 * hfm.stringWidth(" 999");
-        return hfm.stringWidth("00000000000000000000000000000000000000");
+        return leftWidth + extraWidth;
     }
     
     private boolean containsViolation(int from, int to) {
