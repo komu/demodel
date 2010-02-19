@@ -28,8 +28,7 @@ public class DependencyMatrixView extends JComponent {
 
     private static final long serialVersionUID = 1L;
     
-    private final DependencyModel model;
-    private Module selectedModule;
+    private final DependencyMatrixViewModel model;
     private final Font headerFont = new Font("dialog", Font.BOLD, 12);
     private final Font gridFont = new Font("dialog", Font.PLAIN, 11);
     private final Color headerBackground = new Color(200, 200, 255);
@@ -40,7 +39,7 @@ public class DependencyMatrixView extends JComponent {
     public DependencyMatrixView(DependencyModel model) {
         if (model == null) throw new NullPointerException("null model");
         
-        this.model = model;
+        this.model = new DependencyMatrixViewModel(model);
         
         updatePreferredSize();
         setFocusable(true);
@@ -55,9 +54,9 @@ public class DependencyMatrixView extends JComponent {
         int cellSize = getCellSize();
         
         int width = insets.left + insets.right 
-                  + leftWidth + (cellSize * model.getModuleCount());
+                  + leftWidth + (cellSize * model.getVisibleModuleCount());
         int height = insets.top + insets.bottom
-                  + (cellSize * (1 + model.getModuleCount()));
+                  + (cellSize * (1 + model.getVisibleModuleCount()));
         
         setPreferredSize(new Dimension(width, height));
     }
@@ -87,7 +86,7 @@ public class DependencyMatrixView extends JComponent {
         Insets insets = getInsets();
         int dx = insets.left;
         int dy = insets.top;
-        int moduleCount = model.getModuleCount();
+        int moduleCount = model.getVisibleModuleCount();
         
         FontMetrics hfm = getFontMetrics(headerFont);
         
@@ -114,10 +113,10 @@ public class DependencyMatrixView extends JComponent {
         g.fillRect(dx + leftWidth, dy, width - leftWidth, cellHeight);
         
         // Draw the background for selected module, if there is one
-        if (selectedModule != null) {
-            int index = model.indexOfModule(selectedModule);
+        int selectedModuleIndex = model.getIndexOfSelectedModule();
+        if (selectedModuleIndex != DependencyMatrixViewModel.NO_SELECTION) {
             g.setColor(headerBackgroundSelected);
-            g.fillRect(dx, gridY + index * cellHeight, leftWidth, cellHeight);
+            g.fillRect(dx, gridY + selectedModuleIndex * cellHeight, leftWidth, cellHeight);
         }
         
         // Draw the module list on left.
@@ -194,7 +193,7 @@ public class DependencyMatrixView extends JComponent {
         int headerYOffset = gridY - ((cellHeight - headerFontHeight) / 2) - hfm.getDescent();
         
         int moduleNumber = 1;
-        for (Module module : model.getModules()) {
+        for (Module module : model.getVisibleModules()) {
             String num = String.valueOf(moduleNumber);
             int numWidth = hfm.stringWidth(num);
             
@@ -207,7 +206,7 @@ public class DependencyMatrixView extends JComponent {
     }
 
     private void drawTopBar(Graphics2D g, int dx, int dy, int cellHeight, int cellWidth, int textdx, int leftWidth) {
-        int moduleCount = model.getModuleCount();
+        int moduleCount = model.getVisibleModuleCount();
         FontMetrics hfm = g.getFontMetrics(headerFont);
 
         g.setColor(getForeground());
@@ -233,7 +232,7 @@ public class DependencyMatrixView extends JComponent {
         int ypos = y - dy - cellSize;
         if (x >= dx && x <= dx + leftWidth && ypos >= 0) {
             int moduleIndex = ypos / cellSize; 
-            if (moduleIndex < model.getModuleCount())
+            if (moduleIndex < model.getVisibleModuleCount())
                 return model.getModuleAt(moduleIndex);                
         }
         
@@ -246,7 +245,7 @@ public class DependencyMatrixView extends JComponent {
         int leftWidth = 20;
         int extraWidth = 2 * hfm.stringWidth(" 999");
         
-        for (Module module : model.getModules())
+        for (Module module : model.getVisibleModules())
             leftWidth = max(leftWidth, hfm.stringWidth(module.getName()));            
         
         return leftWidth + extraWidth;
@@ -257,7 +256,7 @@ public class DependencyMatrixView extends JComponent {
     }
     
     private void fireModuleSelected(Module module) {
-        this.selectedModule = module;
+        model.setSelectedModule(module);
         repaint();
     }
     
@@ -266,17 +265,8 @@ public class DependencyMatrixView extends JComponent {
         repaint();
     }
     
-    private void moveSelectedModuleUp() {
-        if (selectedModule == null) return;
-        
-        model.moveUp(selectedModule);
-        repaint();
-    }
-    
-    private void moveSelectedModuleDown() {
-        if (selectedModule == null) return;
-     
-        model.moveDown(selectedModule);
+    private void moveSelectedModule(MoveDirection direction) {
+        model.moveSelectedModule(direction);
         repaint();
     }
     
@@ -293,11 +283,11 @@ public class DependencyMatrixView extends JComponent {
         public void keyPressed(KeyEvent e) {
             switch (e.getKeyCode()) {
             case KeyEvent.VK_UP:
-                moveSelectedModuleUp();
+                moveSelectedModule(MoveDirection.UP);
                 e.consume();
                 break;
             case KeyEvent.VK_DOWN:
-                moveSelectedModuleDown();
+                moveSelectedModule(MoveDirection.DOWN);
                 e.consume();
                 break;
             case KeyEvent.VK_S:
