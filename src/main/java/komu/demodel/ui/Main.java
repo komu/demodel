@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006 Juha Komulainen. All rights reserved.
+ * Copyright (C) 2006-2010 Juha Komulainen. All rights reserved.
  */
 package komu.demodel.ui;
 
@@ -20,7 +20,7 @@ public class Main {
             parser.parseDirectory(new File("."));
             DependencyModel model = parser.getModel();
             
-            UIManager.setLookAndFeel(UIManager.getCrossPlatformLookAndFeelClassName());
+            UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
             JFrame frame = new JFrame("demodel");
             frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
             frame.add(new JScrollPane(new DependencyMatrixView(model)));
