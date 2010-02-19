@@ -281,6 +281,11 @@ public class DependencyMatrixView extends JComponent {
         repaint();
     }
     
+    private void sortModules() {
+        model.sortModules();
+        repaint();
+    }
+    
     private void moveSelectedModuleUp() {
         if (selectedModule == null) return;
         
@@ -314,12 +319,19 @@ public class DependencyMatrixView extends JComponent {
     private class MyKeyListener extends KeyAdapter {
         @Override
         public void keyPressed(KeyEvent e) {
-            if (e.getKeyCode() == KeyEvent.VK_UP) {
+            switch (e.getKeyCode()) {
+            case KeyEvent.VK_UP:
                 moveSelectedModuleUp();
                 e.consume();
-            } else if (e.getKeyCode() == KeyEvent.VK_DOWN) {
+                break;
+            case KeyEvent.VK_DOWN:
                 moveSelectedModuleDown();
                 e.consume();
+                break;
+            case KeyEvent.VK_S:
+                sortModules();
+                e.consume();
+                break;
             }
         }
     }

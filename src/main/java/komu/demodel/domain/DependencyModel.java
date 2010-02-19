@@ -4,6 +4,8 @@
 package komu.demodel.domain;
 
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 
 public class DependencyModel {
@@ -40,5 +42,49 @@ public class DependencyModel {
     
     public List<Module> getModules() {
         return modules;
+    }
+
+    public void sortModules() {
+        List<Module> workList = new ArrayList<Module>(modules);
+        modules.clear();
+        
+        while (!workList.isEmpty()) {
+            Module module = pickModuleWithLeastIncomingDependencies(workList);
+            workList.remove(module);
+            modules.add(module);
+        }
+    }
+
+    private static Module pickModuleWithLeastIncomingDependencies(List<Module> modules) {
+        if (modules.isEmpty()) throw new IllegalArgumentException("empty modules");
+
+        List<ModuleWithWeight> weightedModules = new ArrayList<ModuleWithWeight>(modules.size());
+        for (Module module : modules) 
+            weightedModules.add(new ModuleWithWeight(module, incomingDependencies(module, modules)));
+    
+        return Collections.min(weightedModules).module;
+    }
+    
+    private static int incomingDependencies(Module module, Collection<Module> modules) {
+        int sum = 0;
+        for (Module m : modules)
+            sum += m.getDependencyStrength(module);
+        return sum;
+    }
+    
+    private static class ModuleWithWeight implements Comparable<ModuleWithWeight> {
+
+        final Module module;
+        final int weight;
+
+        public ModuleWithWeight(Module module, int weight) {
+            this.module = module;
+            this.weight = weight;
+        }
+        
+        public int compareTo(ModuleWithWeight o) {
+            return weight - o.weight;
+        }
+        
     }
 }
