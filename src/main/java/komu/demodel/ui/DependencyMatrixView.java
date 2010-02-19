@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006 Juha Komulainen. All rights reserved.
+ * Copyright (C) 2006-2010 Juha Komulainen. All rights reserved.
  */
 package komu.demodel.ui;
 
@@ -53,9 +53,9 @@ public class DependencyMatrixView extends JComponent {
         int cellSize = getCellSize();
         
         int width = insets.left + insets.right 
-                  + leftWidth + (cellSize * countVisibleModules());
+                  + leftWidth + (cellSize * model.getModuleCount());
         int height = insets.top + insets.bottom
-                  + (cellSize * (1 + countVisibleModules()));
+                  + (cellSize * (1 + model.getModuleCount()));
         
         setPreferredSize(new Dimension(width, height));
     }
@@ -85,7 +85,7 @@ public class DependencyMatrixView extends JComponent {
         Insets insets = getInsets();
         int dx = insets.left;
         int dy = insets.top;
-        int moduleCount = countVisibleModules();
+        int moduleCount = model.getModuleCount();
         
         FontMetrics hfm = getFontMetrics(headerFont);
         
@@ -113,7 +113,7 @@ public class DependencyMatrixView extends JComponent {
         
         // Draw the background for selected module, if there is one
         if (selectedModule != null) {
-            int index = moduleIndex(selectedModule);
+            int index = model.indexOfModule(selectedModule);
             g.setColor(headerBackgroundSelected);
             g.fillRect(dx, gridY + index * cellHeight, leftWidth, cellHeight);
         }
@@ -145,7 +145,7 @@ public class DependencyMatrixView extends JComponent {
         int gridFontHeight = gfm.getHeight();
         for (int row = 0; row < moduleCount; row++) {
             for (int col = 0; col < moduleCount; col++) {
-                int strength = dependencyStrength(col, row);
+                int strength = model.dependencyStrength(col, row);
                 if (row != col && strength > 0) {
                     String str = String.valueOf(strength);
                     int sw = gfm.stringWidth(str);
@@ -191,20 +191,21 @@ public class DependencyMatrixView extends JComponent {
         int headerFontHeight = hfm.getHeight();
         int headerYOffset = gridY - ((cellHeight - headerFontHeight) / 2) - hfm.getDescent();
         
-        int modules = countVisibleModules();
-        for (int mod = 0; mod < modules; mod++) {
-            String text = moduleName(mod);
-            String num = String.valueOf(mod + 1);
+        int moduleNumber = 1;
+        for (Module module : model.getModules()) {
+            String num = String.valueOf(moduleNumber);
             int numWidth = hfm.stringWidth(num);
             
-            int yy = headerYOffset + ((mod + 1) * cellHeight); 
-            g.drawString(text, dx + textdx, yy);
+            int yy = headerYOffset + (moduleNumber * cellHeight); 
+            g.drawString(module.getName(), dx + textdx, yy);
             g.drawString(num, dx + leftWidth - numWidth - textdx, yy);
+            
+            moduleNumber++;
         }
     }
 
     private void drawTopBar(Graphics2D g, int dx, int dy, int cellHeight, int cellWidth, int textdx, int leftWidth) {
-        int moduleCount = countVisibleModules();
+        int moduleCount = model.getModuleCount();
         FontMetrics hfm = g.getFontMetrics(headerFont);
 
         g.setColor(getForeground());
@@ -214,10 +215,6 @@ public class DependencyMatrixView extends JComponent {
             
             g.drawString(String.valueOf(mod + 1), xx + textdx, yy - hfm.getDescent());
         }
-    }
-
-    private int moduleIndex(Module module) {
-        return model.getModules().indexOf(module);
     }
 
     private int getCellSize() {
@@ -234,16 +231,11 @@ public class DependencyMatrixView extends JComponent {
         int ypos = y - dy - cellSize;
         if (x >= dx && x <= dx + leftWidth && ypos >= 0) {
             int moduleIndex = ypos / cellSize; 
-            if (moduleIndex < countVisibleModules()) {
-                return model.getModules().get(moduleIndex);                
-            }
+            if (moduleIndex < model.getModuleCount())
+                return model.getModuleAt(moduleIndex);                
         }
         
         return null;
-    }
-
-    private int countVisibleModules() {
-        return model.getModules().size();
     }
 
     private int calculateLeftHeaderWidth() {
@@ -251,11 +243,8 @@ public class DependencyMatrixView extends JComponent {
         
         int leftWidth = 20; // minimum width
         
-        int moduleCount = countVisibleModules();
-        for (int mod = 0; mod < moduleCount; mod++) {
-            String text = moduleName(mod);
-            leftWidth = max(leftWidth, hfm.stringWidth(text));
-        }
+        for (Module module : model.getModules())
+            leftWidth = max(leftWidth, hfm.stringWidth(module.getName()));            
         
         // Add some extra to leftwidth
         //return leftWidth + 2 * hfm.stringWidth(" 999");
@@ -263,17 +252,7 @@ public class DependencyMatrixView extends JComponent {
     }
     
     private boolean containsViolation(int from, int to) {
-        return from > to && dependencyStrength(from, to) > 0;
-    }
-    
-    private int dependencyStrength(int from, int to) {
-        Module fromModule = model.getModules().get(from);
-        Module toModule = model.getModules().get(to);
-        return fromModule.getDependencyStrength(toModule);
-    }
-    
-    private String moduleName(int index) {
-        return model.getModules().get(index).getName();
+        return from > to && model.dependencyStrength(from, to) > 0;
     }
     
     private void fireModuleSelected(Module module) {
@@ -289,23 +268,15 @@ public class DependencyMatrixView extends JComponent {
     private void moveSelectedModuleUp() {
         if (selectedModule == null) return;
         
-        int index = moduleIndex(selectedModule);
-        if (index > 0) {
-            model.getModules().remove(selectedModule);
-            model.getModules().add(index - 1, selectedModule);
-            repaint();
-        }
+        model.moveUp(selectedModule);
+        repaint();
     }
     
     private void moveSelectedModuleDown() {
         if (selectedModule == null) return;
-        
-        int index = moduleIndex(selectedModule);
-        if (index != -1 && index < countVisibleModules() - 1) {
-            model.getModules().remove(selectedModule);
-            model.getModules().add(index + 1, selectedModule);
-            repaint();
-        }
+     
+        model.moveDown(selectedModule);
+        repaint();
     }
     
     private class MyMouseListener extends MouseAdapter {

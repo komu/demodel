@@ -1,7 +1,9 @@
 /*
- * Copyright (C) 2006 Juha Komulainen. All rights reserved.
+ * Copyright (C) 2006-2010 Juha Komulainen. All rights reserved.
  */
 package komu.demodel.domain;
+
+import static java.util.Collections.unmodifiableList;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -12,38 +14,56 @@ public class DependencyModel {
 
     private final List<Module> modules = new ArrayList<Module>();
     
-    public DependencyModel() {
-        /*
-        Module a = new Module("Module A");
-        Module b = new Module("Module B");
-        Module c = new Module("Module C");
-        Module d = new Module("Module D");
-        Module e = new Module("Module E");
-        
-        a.setDependencyStrength(b, 10);
-        a.setDependencyStrength(e, 4);
-        b.setDependencyStrength(a, 10);
-        b.setDependencyStrength(c, 4);
-        b.setDependencyStrength(d, 2);
-        b.setDependencyStrength(e, 4);
-        c.setDependencyStrength(a, 5);
-        c.setDependencyStrength(d, 4);
-        c.setDependencyStrength(e, 1);
-        d.setDependencyStrength(a, 8);
-        d.setDependencyStrength(b, 5);
-        d.setDependencyStrength(e, 284);
-        e.setDependencyStrength(a, 10);
-        e.setDependencyStrength(b, 4);
-        e.setDependencyStrength(d, 4);
-        
-        modules.addAll(Arrays.asList(a, b, c, d, e));
-        */
-    }
-    
     public List<Module> getModules() {
-        return modules;
+        return unmodifiableList(modules);
     }
 
+    public Module getModuleAt(int index) {
+        return modules.get(index);
+    }
+
+    public int indexOfModule(Module module) {
+        int index = modules.indexOf(module);
+        if (index != -1)
+            return index;
+        else
+            throw new IllegalArgumentException("unknown module: " + module);
+    }
+    
+    public int dependencyStrength(int from, int to) {
+        Module fromModule = modules.get(from);
+        Module toModule = modules.get(to);
+        return fromModule.getDependencyStrength(toModule);
+    }
+    
+    public void addModule(Module module) {
+        if (module == null) throw new NullPointerException("null module");
+
+        assert !modules.contains(module);
+        
+        modules.add(module);
+    }
+    
+    public void moveUp(Module module) {
+        int index = modules.indexOf(module);
+        if (index > 0) {
+            modules.remove(module);
+            modules.add(index - 1, module);
+        }
+    }
+
+    public void moveDown(Module module) {
+        int index = modules.indexOf(module);
+        if (index != -1 && index < modules.size() - 1) {
+            modules.remove(module);
+            modules.add(index + 1, module);
+        }
+    }
+    
+    public int getModuleCount() {
+        return modules.size();
+    }
+    
     public void sortModules() {
         List<Module> workList = new ArrayList<Module>(modules);
         modules.clear();
@@ -85,6 +105,5 @@ public class DependencyModel {
         public int compareTo(ModuleWithWeight o) {
             return weight - o.weight;
         }
-        
     }
 }

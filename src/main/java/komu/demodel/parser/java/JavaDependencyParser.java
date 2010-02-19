@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006 Juha Komulainen. All rights reserved.
+ * Copyright (C) 2006-2010 Juha Komulainen. All rights reserved.
  */
 package komu.demodel.parser.java;
 
@@ -34,12 +34,11 @@ public class JavaDependencyParser {
     private final MethodVisitor methodVisitor = new MyMethodVisitor();
     private final FieldVisitor fieldVisitor = new MyFieldVisitor();
     private final AnnotationVisitor annotationVisitor = new MyAnnotationVisitor();
-    private Module module;
+    private Module currentModule;
 
     public void parseDirectory(File directory) throws IOException {
-        for (File file : new FileSet(directory, new ExtensionFileFilter("class"))) {
+        for (File file : new FileSet(directory, new ExtensionFileFilter("class")))
             visitFile(file);
-        }
     }
     
     private void visitFile(File file) throws IOException {
@@ -56,91 +55,78 @@ public class JavaDependencyParser {
     public DependencyModel getModel() {
         DependencyModel model = new DependencyModel();
         
-        for (Module module : modules.values()) {
-            if (module.isProgramModule()) {
-                model.getModules().add(module);
-            }
-        }
+        for (Module module : modules.values())
+            if (module.isProgramModule())
+                model.addModule(module);
         
         return model;
     }
     
-    private Module getVisitedModule(String name) {
-        Module module = getModule(name);
-        module.setProgramModule(true);
+    private Module getVisitedModuleForType(String name) {
+        Module module = getModuleForType(name);
+        module.markAsProgramModule();
         return module;
     }
     
-    private Module getModule(String name) {
-        name = name.replace('/', '.');
-        int dollarIndex = name.indexOf('$');
-        if (dollarIndex != -1) {
-            // inner classes are considered the same module as parent
-            name = name.substring(0, dollarIndex);
-        }
+    private Module getModuleForType(String className) {
+        String moduleName = packageName(className);
         
-        // finally, strip the class name (for now)
-        int periodIndex = name.lastIndexOf('.');
-        if (periodIndex != -1) {
-            name = name.substring(0, periodIndex);
-        }
-        
-        Module module = modules.get(name);
+        Module module = modules.get(moduleName);
         if (module == null) {
-            module = new Module(name);
-            modules.put(name, module);
+            module = new Module(moduleName);
+            modules.put(moduleName, module);
         }
         return module;
     }
+
+    private static String packageName(String name) {
+        String normalizedName = name.replace('/', '.');
+        int periodIndex = normalizedName.lastIndexOf('.');
+        return (periodIndex != -1) ? normalizedName.substring(0, periodIndex) : normalizedName;
+    }
     
-    private void addDependency(String toModule, DependencyType type) {
-        Module target = getModule(toModule);
-        if (module != target) {
-            module.addDependency(target, type);
-        }
+    private void addDependencyToType(String typeName, DependencyType type) {
+        Module target = getModuleForType(typeName);
+        if (currentModule != target)
+            currentModule.addDependency(target, type);
     }
 
     private void addDependency(Type toType, DependencyType type) {
-        addDependency(toType.getClassName(), type);
+        addDependencyToType(toType.getClassName(), type);
     }
     
     private class MyClassVisitor implements ClassVisitor {
         public void visit(int version, int access, String name, String signature, String superName, String[] interfaces) {
-            module = getVisitedModule(name);
+            currentModule = getVisitedModuleForType(name);
             
-            if (superName != null) {
-                addDependency(superName, DependencyType.INHERITANCE);
-            }
+            if (superName != null)
+                addDependencyToType(superName, DependencyType.INHERITANCE);
             
-            for (String interfaceName : interfaces) {
-                addDependency(interfaceName, DependencyType.INHERITANCE);
-            }
+            for (String interfaceName : interfaces)
+                addDependencyToType(interfaceName, DependencyType.INHERITANCE);
         }
         
         public MethodVisitor visitMethod(int access, String name, String desc, String signature, String[] exceptions) {
             addDependency(Type.getReturnType(desc), DependencyType.REF);
 
-            for (Type type : Type.getArgumentTypes(desc)) {
+            for (Type type : Type.getArgumentTypes(desc))
                 addDependency(type, DependencyType.REF);
-            }
             
-            for (Type type : getTypesFromGenericSignature(signature)) {
+            for (Type type : getTypesFromGenericSignature(signature))
                 addDependency(type, DependencyType.REF);
-            }
             
             return methodVisitor;
         }
         
         public void visitEnd() {
-            module = null;
+            currentModule = null;
         }
         
         public FieldVisitor visitField(int access, String name, String desc, String signature, Object value) {
             addDependency(Type.getType(desc), DependencyType.FIELD_REF);
 
-            for (Type type : getTypesFromGenericSignature(signature)) {
+            for (Type type : getTypesFromGenericSignature(signature))
                 addDependency(type, DependencyType.FIELD_REF);
-            }
 
             return fieldVisitor;
         }
@@ -177,28 +163,26 @@ public class JavaDependencyParser {
             
             addDependency(fieldType, DependencyType.REF);
 
-            for (Type type : getTypesFromGenericSignature(signature)) {
+            for (Type type : getTypesFromGenericSignature(signature))
                 addDependency(type, DependencyType.REF);
-            }
         }
         
         public void visitTypeInsn(int opcode, String desc) {
-            addDependency(desc, DependencyType.REF);
+            addDependencyToType(desc, DependencyType.REF);
         }
         
         public void visitFieldInsn(int opcode, String owner, String name, String desc) {
-            addDependency(owner, DependencyType.REF);
+            addDependencyToType(owner, DependencyType.REF);
             addDependency(Type.getType(desc), DependencyType.REF);
         }
         
         public void visitMethodInsn(int opcode, String owner, String name, String desc) {
-            addDependency(owner, DependencyType.REF);
+            addDependencyToType(owner, DependencyType.REF);
             
             addDependency(Type.getReturnType(desc), DependencyType.REF);
 
-            for (Type type : Type.getArgumentTypes(desc)) {
+            for (Type type : Type.getArgumentTypes(desc))
                 addDependency(type, DependencyType.REF);
-            }
         }
         
         public void visitMultiANewArrayInsn(String desc, int dims) {
