@@ -14,29 +14,28 @@ import org.objectweb.asm.Type;
 
 public class SignatureUtils {
     
-    private static final Pattern GENERIC_SIGNATURE_PATTERN =
-        Pattern.compile("^(L[^<>;]+)<(.+)>;$");
+    private static final Pattern METHOD_SIGNATURE_PATTERN =
+        Pattern.compile("^\\((.*)\\)(.*)$");
+
+    
+    public static List<Type> getTypesFromGenericMethodSignature(String signature) {
+        Matcher m = METHOD_SIGNATURE_PATTERN.matcher(signature);
+        if (!m.matches())
+            throw new IllegalArgumentException("invalid signature: " + signature);
+        
+        List<Type> result = new ArrayList<Type>();
+        result.addAll(getTypesFromGenericSignature(m.group(1)));
+        result.addAll(getTypesFromGenericSignature(m.group(2)));
+        return result;
+    }
     
     public static List<Type> getTypesFromGenericSignature(String signature) {
-        if (signature == null) return emptyList();
+        if (signature.length() == 0) return emptyList();
         
-        List<Type> types = new ArrayList<Type>();
-        parseTypesFromGenericSignature(types, signature);
+        String[] parts = signature.split("[;<>]"); 
+        List<Type> types = new ArrayList<Type>(parts.length);
+        for (String part : parts)
+            types.add(Type.getType(part + ";"));
         return types;
-    }
-
-    private static void parseTypesFromGenericSignature(List<Type> types, String signature) {
-        Matcher m = GENERIC_SIGNATURE_PATTERN.matcher(signature);
-        
-        System.out.println(signature);
-        
-        if (m.matches()) {
-            types.add(Type.getType(m.group(1) + ";"));
-            parseTypesFromGenericSignature(types, m.group(2));
-            
-        } else {
-            for (String s : signature.split(";"))
-                types.add(Type.getType(s + ";"));
-        }
     }
 }

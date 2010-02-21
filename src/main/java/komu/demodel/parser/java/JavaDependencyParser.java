@@ -4,6 +4,7 @@
 package komu.demodel.parser.java;
 
 import static komu.demodel.parser.java.SignatureUtils.getTypesFromGenericSignature;
+import static komu.demodel.parser.java.SignatureUtils.getTypesFromGenericMethodSignature;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -106,14 +107,18 @@ public class JavaDependencyParser {
                 addDependencyToType(interfaceName, DependencyType.INHERITANCE);
         }
         
-        public MethodVisitor visitMethod(int access, String name, String desc, String signature, String[] exceptions) {
-            addDependency(Type.getReturnType(desc), DependencyType.REF);
-
-            for (Type type : Type.getArgumentTypes(desc))
-                addDependency(type, DependencyType.REF);
+        public MethodVisitor visitMethod(int access, String name, String signature, String genericSignature, String[] exceptions) {
+            System.out.printf("visitMethod(%d, %s, %s, %s, ...)\n", access, name, signature, genericSignature);
             
-            for (Type type : getTypesFromGenericSignature(signature))
-                addDependency(type, DependencyType.REF);
+            if (genericSignature == null) {
+                addDependency(Type.getReturnType(signature), DependencyType.REF);
+
+                for (Type type : Type.getArgumentTypes(signature))
+                    addDependency(type, DependencyType.REF);
+            } else {
+                for (Type type : getTypesFromGenericMethodSignature(genericSignature))
+                    addDependency(type, DependencyType.REF);
+            }
             
             return methodVisitor;
         }
@@ -122,11 +127,12 @@ public class JavaDependencyParser {
             currentModule = null;
         }
         
-        public FieldVisitor visitField(int access, String name, String desc, String signature, Object value) {
-            addDependency(Type.getType(desc), DependencyType.FIELD_REF);
-
-            for (Type type : getTypesFromGenericSignature(signature))
-                addDependency(type, DependencyType.FIELD_REF);
+        public FieldVisitor visitField(int access, String name, String signature, String genericSignature, Object value) {
+            if (genericSignature == null)
+                addDependency(Type.getType(signature), DependencyType.FIELD_REF);
+            else
+                for (Type type : getTypesFromGenericSignature(genericSignature))
+                    addDependency(type, DependencyType.FIELD_REF);
 
             return fieldVisitor;
         }
@@ -158,13 +164,12 @@ public class JavaDependencyParser {
             return annotationVisitor;
         }
         
-        public void visitLocalVariable(String name, String desc, String signature, Label start, Label end, int index) {
-            Type fieldType = Type.getType(desc);
-            
-            addDependency(fieldType, DependencyType.REF);
-
-            for (Type type : getTypesFromGenericSignature(signature))
-                addDependency(type, DependencyType.REF);
+        public void visitLocalVariable(String name, String signature, String genericSignature, Label start, Label end, int index) {
+            if (genericSignature == null)
+                addDependency(Type.getType(signature), DependencyType.REF);
+            else
+                for  (Type type : getTypesFromGenericSignature(genericSignature))
+                    addDependency(type, DependencyType.REF);
         }
         
         public void visitTypeInsn(int opcode, String desc) {

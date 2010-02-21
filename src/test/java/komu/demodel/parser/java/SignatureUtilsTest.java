@@ -5,6 +5,7 @@ package komu.demodel.parser.java;
 
 import static junit.framework.Assert.assertEquals;
 import static komu.demodel.parser.java.SignatureUtils.getTypesFromGenericSignature;
+import static komu.demodel.parser.java.SignatureUtils.getTypesFromGenericMethodSignature;
 
 import java.util.List;
 
@@ -12,11 +13,6 @@ import org.junit.Test;
 import org.objectweb.asm.Type;
 
 public class SignatureUtilsTest {
-    
-    @Test
-    public void nullSignatureHasNoTypes() {
-        assertTypes(null);
-    }
     
     @Test
     public void typeParametersShouldBeParsed() {
@@ -32,11 +28,31 @@ public class SignatureUtilsTest {
                 "java.util.Map", "java.lang.String", "java.util.Map", "java.lang.Integer", "java.lang.Float");
     }
     
-    private static void assertTypes(String signature, String... classNames) {
-        List<Type> types = getTypesFromGenericSignature(signature);
-        assertEquals("size", classNames.length, types.size());
-        
-        for (int i = 0; i < classNames.length; i++)
-            assertEquals("className", classNames[i], types.get(i).getClassName());
+    @Test
+    public void methodSignature() {
+        assertMethodTypes("(Ljava/util/List<Lfoo/Bar;>;)Lfoo/Baz;",
+                          "java.util.List", "foo.Bar", "foo.Baz");
     }
+
+    @Test
+    public void methodSignatureWithoutParameters() {
+        assertMethodTypes("()Lfoo/Baz;",
+                          "foo.Baz");
+    }
+    
+    private static void assertTypes(String signature, String... classNames) {
+        assertReturnTypes(classNames, getTypesFromGenericSignature(signature));
+    }
+
+    private static void assertMethodTypes(String signature, String... classNames) {
+        assertReturnTypes(classNames, getTypesFromGenericMethodSignature(signature));
+    }
+
+    private static void assertReturnTypes(String[] expectedTypes, List<Type> types) {
+        assertEquals("size", expectedTypes.length, types.size());
+        
+        for (int i = 0; i < expectedTypes.length; i++)
+            assertEquals("className", expectedTypes[i], types.get(i).getClassName());
+    }
+
 }
