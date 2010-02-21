@@ -108,17 +108,9 @@ public class JavaDependencyParser {
         }
         
         public MethodVisitor visitMethod(int access, String name, String signature, String genericSignature, String[] exceptions) {
-            System.out.printf("visitMethod(%d, %s, %s, %s, ...)\n", access, name, signature, genericSignature);
-            
-            if (genericSignature == null) {
-                addDependency(Type.getReturnType(signature), DependencyType.REF);
-
-                for (Type type : Type.getArgumentTypes(signature))
-                    addDependency(type, DependencyType.REF);
-            } else {
-                for (Type type : getTypesFromGenericMethodSignature(genericSignature))
-                    addDependency(type, DependencyType.REF);
-            }
+            String descriptor = (genericSignature != null) ? genericSignature : signature;
+            for (Type type : getTypesFromGenericMethodSignature(descriptor))
+                addDependency(type, DependencyType.REF);
             
             return methodVisitor;
         }
@@ -128,12 +120,9 @@ public class JavaDependencyParser {
         }
         
         public FieldVisitor visitField(int access, String name, String signature, String genericSignature, Object value) {
-            if (genericSignature == null)
-                addDependency(Type.getType(signature), DependencyType.FIELD_REF);
-            else
-                for (Type type : getTypesFromGenericSignature(genericSignature))
-                    addDependency(type, DependencyType.FIELD_REF);
-
+            String descriptor = (genericSignature != null) ? genericSignature : signature;
+            for (Type type : getTypesFromGenericSignature(descriptor))
+                addDependency(type, DependencyType.FIELD_REF);
             return fieldVisitor;
         }
         
@@ -165,11 +154,9 @@ public class JavaDependencyParser {
         }
         
         public void visitLocalVariable(String name, String signature, String genericSignature, Label start, Label end, int index) {
-            if (genericSignature == null)
-                addDependency(Type.getType(signature), DependencyType.REF);
-            else
-                for  (Type type : getTypesFromGenericSignature(genericSignature))
-                    addDependency(type, DependencyType.REF);
+            String descriptor = (genericSignature != null) ? genericSignature : signature;
+            for  (Type type : getTypesFromGenericSignature(descriptor))
+                addDependency(type, DependencyType.REF);
         }
         
         public void visitTypeInsn(int opcode, String desc) {
