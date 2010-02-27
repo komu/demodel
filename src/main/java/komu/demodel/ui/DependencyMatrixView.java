@@ -23,7 +23,6 @@ import javax.swing.JComponent;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 
-import komu.demodel.domain.DependencyModel;
 import komu.demodel.domain.Module;
 import komu.demodel.domain.MoveDirection;
 
@@ -39,10 +38,10 @@ public class DependencyMatrixView extends JComponent {
     private final Color gridColor = new Color(100, 100, 140);
     private final Color violationColor = Color.RED;
     
-    public DependencyMatrixView(DependencyModel model) {
-        if (model == null) throw new NullPointerException("null model");
+    public DependencyMatrixView(Module root) {
+        if (root == null) throw new NullPointerException("null root");
         
-        this.model = new DependencyMatrixViewModel(model);
+        this.model = new DependencyMatrixViewModel(root);
         this.model.addListener(new MyModelListener());
         
         updatePreferredSize();

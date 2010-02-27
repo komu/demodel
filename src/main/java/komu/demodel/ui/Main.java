@@ -9,7 +9,7 @@ import javax.swing.JFrame;
 import javax.swing.JScrollPane;
 import javax.swing.UIManager;
 
-import komu.demodel.domain.DependencyModel;
+import komu.demodel.domain.Module;
 import komu.demodel.parser.java.JavaDependencyParser;
 
 public class Main {
@@ -18,12 +18,12 @@ public class Main {
         try {
             JavaDependencyParser parser = new JavaDependencyParser();
             parser.parseDirectory(new File("."));
-            DependencyModel model = parser.getModel();
+            Module root = parser.getRoot();
             
             UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
             JFrame frame = new JFrame("demodel");
             frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-            frame.add(new JScrollPane(new DependencyMatrixView(model)));
+            frame.add(new JScrollPane(new DependencyMatrixView(root)));
             frame.pack();
             frame.setVisible(true);
             

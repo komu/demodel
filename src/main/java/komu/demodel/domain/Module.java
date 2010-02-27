@@ -9,6 +9,7 @@ import static java.util.Collections.unmodifiableList;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
@@ -45,6 +46,16 @@ public final class Module {
             if (child.isProgramModule()) return true;
         
         return false;
+    }
+    
+    public void filterNonProgramReferences() {
+        for (Iterator<Module> it = children.iterator(); it.hasNext(); ) {
+            Module child = it.next();
+            if (child.isProgramModule())
+                child.filterNonProgramReferences();
+            else
+                it.remove();
+        }
     }
     
     public void markAsProgramModule() {

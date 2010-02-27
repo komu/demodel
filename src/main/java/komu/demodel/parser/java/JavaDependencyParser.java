@@ -13,7 +13,6 @@ import java.io.InputStream;
 import java.util.Map;
 import java.util.TreeMap;
 
-import komu.demodel.domain.DependencyModel;
 import komu.demodel.domain.DependencyType;
 import komu.demodel.domain.Module;
 import komu.demodel.utils.ExtensionFileFilter;
@@ -29,7 +28,8 @@ import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Type;
 
 public class JavaDependencyParser {
-    
+
+    private final Module rootModule = new Module("<root>", null);
     private final Map<String, Module> modules = new TreeMap<String, Module>();
     private final ClassVisitor classVisitor = new MyClassVisitor();
     private final MethodVisitor methodVisitor = new MyMethodVisitor();
@@ -53,19 +53,9 @@ public class JavaDependencyParser {
         }
     }
     
-    public DependencyModel getModel() {
-        DependencyModel model = new DependencyModel();
-        
-        for (Module module : modules.values())
-            if (isRootModule(module))
-                model.addRootModule(module);
-        
-        return model;
-    }
-    
-    
-    private boolean isRootModule(Module module) {
-        return module.isProgramModule() && !module.getName().contains(".");
+    public Module getRoot() {
+        rootModule.filterNonProgramReferences();
+        return rootModule;
     }
 
     private Module getVisitedModuleForType(String name) {
@@ -81,20 +71,17 @@ public class JavaDependencyParser {
     private Module getModuleByName(String name) {
         Module module = modules.get(name);
         if (module == null) {
-            String parentName = parentName(name);
-            Module parent = (parentName != null) ? getModuleByName(parentName) : null;
-            
-            module = new Module(name, parent);
+            module = new Module(name, getParentModule(name));
             modules.put(name, module);
         }
         return module;
     }
-    
-    private static String parentName(String name) {
-        int periodIndex = name.lastIndexOf('.');
-        return (periodIndex != -1) ? name.substring(0, periodIndex) : null;
-    }
 
+    private Module getParentModule(String name) {
+        int periodIndex = name.lastIndexOf('.');
+        return (periodIndex != -1) ? getModuleByName(name.substring(0, periodIndex)) : rootModule;
+    }
+    
     private static String moduleNameForType(String name) {
         return name.replace('/', '.');
     }

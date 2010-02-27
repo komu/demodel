@@ -3,13 +3,14 @@
  */
 package komu.demodel.ui;
 
+import static java.util.Collections.singletonList;
+
 import java.util.ArrayList;
 import java.util.List;
 
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 
-import komu.demodel.domain.DependencyModel;
 import komu.demodel.domain.Module;
 import komu.demodel.domain.MoveDirection;
 import komu.demodel.utils.ChangeListenerList;
@@ -25,15 +26,15 @@ final class DependencyMatrixViewModel {
 
     public static final int NO_SELECTION = -1;
     
-    private final DependencyModel model;
+    private final Module root;
     private Module selectedModule;
     private final IdentityHashSet<Module> openedModules = new IdentityHashSet<Module>();
     private final ChangeListenerList listeners = new ChangeListenerList();
     
-    DependencyMatrixViewModel(DependencyModel model) {
-        if (model == null) throw new NullPointerException("null model");
+    DependencyMatrixViewModel(Module root) {
+        if (root == null) throw new NullPointerException("null root");
         
-        this.model = model;
+        this.root = root;
     }
 
     public void addListener(ChangeListener listener) {
@@ -64,12 +65,12 @@ final class DependencyMatrixViewModel {
     public List<Module> getVisibleModules() {
         List<Module> modules = new ArrayList<Module>();
         
-        addVisibleModules(modules, model.getModules());
+        addVisibleModules(modules, singletonList(root));
         
         return modules;
     }
 
-    private void addVisibleModules(List<Module> result, List<Module> modules) {
+    private void addVisibleModules(List<Module> result, Iterable<Module> modules) {
         for (Module module : modules) {
             result.add(module);
             if (openedModules.contains(module))
