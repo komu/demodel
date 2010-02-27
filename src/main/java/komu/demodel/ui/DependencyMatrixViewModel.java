@@ -11,6 +11,7 @@ import javax.swing.event.ChangeListener;
 
 import komu.demodel.domain.DependencyModel;
 import komu.demodel.domain.Module;
+import komu.demodel.domain.MoveDirection;
 import komu.demodel.utils.ChangeListenerList;
 import komu.demodel.utils.IdentityHashSet;
 
@@ -96,18 +97,8 @@ final class DependencyMatrixViewModel {
 
     public void moveSelectedModule(MoveDirection direction) {
         if (selectedModule != null) {
-            switch (direction) {
-            case UP: 
-                model.moveUp(selectedModule);
-                fireStateChanged();
-                break;
-            case DOWN:
-                model.moveDown(selectedModule);
-                fireStateChanged();
-                break;
-            default:
-                throw new IllegalArgumentException("unknown MoveDirection: " + direction);    
-            }
+            selectedModule.move(direction);
+            fireStateChanged();
         }
     }
 

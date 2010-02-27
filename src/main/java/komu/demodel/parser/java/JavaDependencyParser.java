@@ -81,12 +81,11 @@ public class JavaDependencyParser {
     private Module getModuleByName(String name) {
         Module module = modules.get(name);
         if (module == null) {
-            module = new Module(name);
+            String parentName = parentName(name);
+            Module parent = (parentName != null) ? getModuleByName(parentName) : null;
+            
+            module = new Module(name, parent);
             modules.put(name, module);
-            String parent = parentName(name);
-            if (parent != null) {
-                getModuleByName(parent).addChild(module);
-            }
         }
         return module;
     }

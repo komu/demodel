@@ -25,6 +25,7 @@ import javax.swing.event.ChangeListener;
 
 import komu.demodel.domain.DependencyModel;
 import komu.demodel.domain.Module;
+import komu.demodel.domain.MoveDirection;
 
 public class DependencyMatrixView extends JComponent {
 

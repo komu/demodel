@@ -12,17 +12,26 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+
 public final class Module {
 
     private final String name;
+    private final Module parent;
     private boolean programModule = false;
     private final List<Module> children = new ArrayList<Module>();
     private final Map<Module,Integer> strengths = new HashMap<Module,Integer>();
     
-    public Module(String name) {
+    public Module(String name, Module parent) {
         if (name ==  null) throw new NullPointerException("null name");
         
         this.name = name;
+        this.parent = parent;
+        if (parent != null)
+            parent.children.add(this);
+    }
+    
+    public Module getParent() {
+        return parent;
     }
  
     public String getName() {
@@ -54,12 +63,6 @@ public final class Module {
             count += child.countLeafsUnder();
         
         return count;
-    }
-    
-    public void addChild(Module child) {
-        if (child == null) throw new NullPointerException("null child");
-        
-        children.add(child);
     }
     
     public List<Module> getChildren() {
@@ -130,21 +133,39 @@ public final class Module {
             children.add(module);
         }
     }
+    
+    public void move(MoveDirection direction) {
+        if (parent != null)
+            parent.move(this, direction);
+    }
+    
+    private void move(Module module, MoveDirection direction) {
+        int index = children.indexOf(module);
+        int newIndex = index + direction.delta;
+        if (index != -1 && isValidChildIndex(newIndex)) {
+            children.remove(module);
+            children.add(newIndex, module);
+        }
+    }
+
+    private boolean isValidChildIndex(int index) {
+        return index >= 0 && index < children.size();
+    }
 
     private static Module pickModuleWithLeastIncomingDependencies(List<Module> modules) {
         assert !modules.isEmpty();
 
         List<ModuleWithWeight> weightedModules = new ArrayList<ModuleWithWeight>(modules.size());
         for (Module module : modules) 
-            weightedModules.add(new ModuleWithWeight(module, incomingDependencies(module, modules)));
+            weightedModules.add(new ModuleWithWeight(module, module.incomingDependencies(modules)));
     
         return min(weightedModules).module;
     }
     
-    private static int incomingDependencies(Module module, Collection<Module> modules) {
+    private int incomingDependencies(Collection<Module> modules) {
         int sum = 0;
         for (Module m : modules)
-            sum += m.getDependencyStrength(module);
+            sum += m.getDependencyStrength(this);
         return sum;
     }
     
