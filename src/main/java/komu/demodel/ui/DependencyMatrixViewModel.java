@@ -3,8 +3,12 @@
  */
 package komu.demodel.ui;
 
+import javax.swing.event.ChangeEvent;
+import javax.swing.event.ChangeListener;
+
 import komu.demodel.domain.DependencyModel;
 import komu.demodel.domain.Module;
+import komu.demodel.utils.ChangeListenerList;
 
 /**
  * Represents the state of the view, but not of the underlying model.
@@ -18,11 +22,20 @@ final class DependencyMatrixViewModel {
     
     private final DependencyModel model;
     private Module selectedModule;
+    private final ChangeListenerList listeners = new ChangeListenerList();
     
     DependencyMatrixViewModel(DependencyModel model) {
         if (model == null) throw new NullPointerException("null model");
         
         this.model = model;
+    }
+
+    public void addListener(ChangeListener listener) {
+        listeners.add(listener);
+    }
+    
+    private void fireStateChanged() {
+        listeners.stateChanged(new ChangeEvent(this));    
     }
 
     public int getVisibleModuleCount() {
@@ -49,11 +62,15 @@ final class DependencyMatrixViewModel {
     }
 
     public void setSelectedModule(Module module) {
-        selectedModule = module;
+        if (module != selectedModule) {
+            selectedModule = module;
+            fireStateChanged();
+        }
     }
 
     public void sortModules() {
         model.sortModules();
+        fireStateChanged();
     }
 
     public void moveSelectedModule(MoveDirection direction) {
@@ -61,9 +78,11 @@ final class DependencyMatrixViewModel {
             switch (direction) {
             case UP: 
                 model.moveUp(selectedModule);
+                fireStateChanged();
                 break;
             case DOWN:
                 model.moveDown(selectedModule);
+                fireStateChanged();
                 break;
             default:
                 throw new IllegalArgumentException("unknown MoveDirection: " + direction);    

@@ -20,6 +20,8 @@ import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 
 import javax.swing.JComponent;
+import javax.swing.event.ChangeEvent;
+import javax.swing.event.ChangeListener;
 
 import komu.demodel.domain.DependencyModel;
 import komu.demodel.domain.Module;
@@ -40,6 +42,7 @@ public class DependencyMatrixView extends JComponent {
         if (model == null) throw new NullPointerException("null model");
         
         this.model = new DependencyMatrixViewModel(model);
+        this.model.addListener(new MyModelListener());
         
         updatePreferredSize();
         setFocusable(true);
@@ -255,26 +258,16 @@ public class DependencyMatrixView extends JComponent {
         return from > to && model.dependencyStrength(from, to) > 0;
     }
     
-    private void fireModuleSelected(Module module) {
-        model.setSelectedModule(module);
-        repaint();
+    private class MyModelListener implements ChangeListener {
+        public void stateChanged(ChangeEvent e) {
+            repaint();
+        }
     }
-    
-    private void sortModules() {
-        model.sortModules();
-        repaint();
-    }
-    
-    private void moveSelectedModule(MoveDirection direction) {
-        model.moveSelectedModule(direction);
-        repaint();
-    }
-    
+
     private class MyMouseListener extends MouseAdapter {
         @Override
         public void mouseClicked(MouseEvent e) {
-            Module module = findModuleAt(e.getX(), e.getY());
-            fireModuleSelected(module);
+            model.setSelectedModule(findModuleAt(e.getX(), e.getY()));
         }
     }
     
@@ -283,15 +276,15 @@ public class DependencyMatrixView extends JComponent {
         public void keyPressed(KeyEvent e) {
             switch (e.getKeyCode()) {
             case KeyEvent.VK_UP:
-                moveSelectedModule(MoveDirection.UP);
+                model.moveSelectedModule(MoveDirection.UP);
                 e.consume();
                 break;
             case KeyEvent.VK_DOWN:
-                moveSelectedModule(MoveDirection.DOWN);
+                model.moveSelectedModule(MoveDirection.DOWN);
                 e.consume();
                 break;
             case KeyEvent.VK_S:
-                sortModules();
+                model.sortModules();
                 e.consume();
                 break;
             }
