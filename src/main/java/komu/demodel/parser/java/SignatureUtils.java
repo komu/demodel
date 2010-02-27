@@ -32,10 +32,14 @@ public class SignatureUtils {
     public static List<Type> getTypesFromGenericSignature(String signature) {
         if (signature.length() == 0) return emptyList();
         
-        String[] parts = signature.split("[;<>]"); 
-        List<Type> types = new ArrayList<Type>(parts.length);
-        for (String part : parts)
-            types.add(Type.getType(part + ";"));
-        return types;
+        try {
+            String[] parts = signature.split("[;<>]+"); 
+            List<Type> types = new ArrayList<Type>(parts.length);
+            for (String part : parts)
+                types.add(Type.getType((part + ";")));
+            return types;
+        } catch (Exception e) {
+            throw new IllegalArgumentException("invalid signature: " + signature);
+        }
     }
 }
