@@ -70,9 +70,4 @@ final class DependencyMatrixViewModel {
             }
         }
     }
-
-    public void moveSelectedModuleDown() {
-        if (selectedModule != null)
-            model.moveUp(selectedModule);
-    }
 }
