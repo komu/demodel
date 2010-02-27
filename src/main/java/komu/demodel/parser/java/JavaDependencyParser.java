@@ -3,8 +3,8 @@
  */
 package komu.demodel.parser.java;
 
-import static komu.demodel.parser.java.SignatureUtils.getTypesFromGenericSignature;
 import static komu.demodel.parser.java.SignatureUtils.getTypesFromGenericMethodSignature;
+import static komu.demodel.parser.java.SignatureUtils.getTypesFromGenericSignature;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -57,12 +57,17 @@ public class JavaDependencyParser {
         DependencyModel model = new DependencyModel();
         
         for (Module module : modules.values())
-            if (module.isProgramModule())
-                model.addModule(module);
+            if (isRootModule(module))
+                model.addRootModule(module);
         
         return model;
     }
     
+    
+    private boolean isRootModule(Module module) {
+        return module.isProgramModule() && !module.getName().contains(".");
+    }
+
     private Module getVisitedModuleForType(String name) {
         Module module = getModuleForType(name);
         module.markAsProgramModule();
@@ -70,20 +75,29 @@ public class JavaDependencyParser {
     }
     
     private Module getModuleForType(String className) {
-        String moduleName = packageName(className);
-        
-        Module module = modules.get(moduleName);
+        return getModuleByName(moduleNameForType(className));
+    }
+
+    private Module getModuleByName(String name) {
+        Module module = modules.get(name);
         if (module == null) {
-            module = new Module(moduleName);
-            modules.put(moduleName, module);
+            module = new Module(name);
+            modules.put(name, module);
+            String parent = parentName(name);
+            if (parent != null) {
+                getModuleByName(parent).addChild(module);
+            }
         }
         return module;
     }
+    
+    private static String parentName(String name) {
+        int periodIndex = name.lastIndexOf('.');
+        return (periodIndex != -1) ? name.substring(0, periodIndex) : null;
+    }
 
-    private static String packageName(String name) {
-        String normalizedName = name.replace('/', '.');
-        int periodIndex = normalizedName.lastIndexOf('.');
-        return (periodIndex != -1) ? normalizedName.substring(0, periodIndex) : normalizedName;
+    private static String moduleNameForType(String name) {
+        return name.replace('/', '.');
     }
     
     private void addDependencyToType(String typeName, DependencyType type) {

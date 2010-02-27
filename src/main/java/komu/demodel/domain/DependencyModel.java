@@ -6,104 +6,46 @@ package komu.demodel.domain;
 import static java.util.Collections.unmodifiableList;
 
 import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
 import java.util.List;
 
 public class DependencyModel {
 
-    private final List<Module> modules = new ArrayList<Module>();
+    private final List<Module> roots = new ArrayList<Module>();
     
     public List<Module> getModules() {
-        return unmodifiableList(modules);
+        return unmodifiableList(roots);
     }
 
     public Module getModuleAt(int index) {
-        return modules.get(index);
-    }
-
-    public int indexOfModule(Module module) {
-        int index = modules.indexOf(module);
-        if (index != -1)
-            return index;
-        else
-            throw new IllegalArgumentException("unknown module: " + module);
+        return roots.get(index);
     }
     
-    public int dependencyStrength(int from, int to) {
-        Module fromModule = modules.get(from);
-        Module toModule = modules.get(to);
-        return fromModule.getDependencyStrength(toModule);
-    }
-    
-    public void addModule(Module module) {
+    public void addRootModule(Module module) {
         if (module == null) throw new NullPointerException("null module");
 
-        assert !modules.contains(module);
+        assert !roots.contains(module);
         
-        modules.add(module);
+        roots.add(module);
     }
     
     public void moveUp(Module module) {
-        int index = modules.indexOf(module);
+        int index = roots.indexOf(module);
         if (index > 0) {
-            modules.remove(module);
-            modules.add(index - 1, module);
+            roots.remove(module);
+            roots.add(index - 1, module);
         }
     }
 
     public void moveDown(Module module) {
-        int index = modules.indexOf(module);
-        if (index != -1 && index < modules.size() - 1) {
-            modules.remove(module);
-            modules.add(index + 1, module);
+        int index = roots.indexOf(module);
+        if (index != -1 && index < roots.size() - 1) {
+            roots.remove(module);
+            roots.add(index + 1, module);
         }
     }
     
     public int getModuleCount() {
-        return modules.size();
+        return roots.size();
     }
     
-    public void sortModules() {
-        List<Module> workList = new ArrayList<Module>(modules);
-        modules.clear();
-        
-        while (!workList.isEmpty()) {
-            Module module = pickModuleWithLeastIncomingDependencies(workList);
-            workList.remove(module);
-            modules.add(module);
-        }
-    }
-
-    private static Module pickModuleWithLeastIncomingDependencies(List<Module> modules) {
-        if (modules.isEmpty()) throw new IllegalArgumentException("empty modules");
-
-        List<ModuleWithWeight> weightedModules = new ArrayList<ModuleWithWeight>(modules.size());
-        for (Module module : modules) 
-            weightedModules.add(new ModuleWithWeight(module, incomingDependencies(module, modules)));
-    
-        return Collections.min(weightedModules).module;
-    }
-    
-    private static int incomingDependencies(Module module, Collection<Module> modules) {
-        int sum = 0;
-        for (Module m : modules)
-            sum += m.getDependencyStrength(module);
-        return sum;
-    }
-    
-    private static class ModuleWithWeight implements Comparable<ModuleWithWeight> {
-
-        final Module module;
-        final int weight;
-
-        public ModuleWithWeight(Module module, int weight) {
-            this.module = module;
-            this.weight = weight;
-        }
-        
-        public int compareTo(ModuleWithWeight o) {
-            return weight - o.weight;
-        }
-    }
 }

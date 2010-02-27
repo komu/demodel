@@ -3,12 +3,16 @@
  */
 package komu.demodel.ui;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 
 import komu.demodel.domain.DependencyModel;
 import komu.demodel.domain.Module;
 import komu.demodel.utils.ChangeListenerList;
+import komu.demodel.utils.IdentityHashSet;
 
 /**
  * Represents the state of the view, but not of the underlying model.
@@ -22,6 +26,7 @@ final class DependencyMatrixViewModel {
     
     private final DependencyModel model;
     private Module selectedModule;
+    private final IdentityHashSet<Module> openedModules = new IdentityHashSet<Module>();
     private final ChangeListenerList listeners = new ChangeListenerList();
     
     DependencyMatrixViewModel(DependencyModel model) {
@@ -39,26 +44,40 @@ final class DependencyMatrixViewModel {
     }
 
     public int getVisibleModuleCount() {
-        return model.getModuleCount();
+        return getVisibleModules().size();
     }
 
     /**
      * Returns the index of selected module, or {@link #NO_SELECTION} if no module is selected.
      */
     public int getIndexOfSelectedModule() {
-        return (selectedModule != null) ? model.indexOfModule(selectedModule) : NO_SELECTION;
+        return (selectedModule != null) ? getVisibleModules().indexOf(selectedModule) : NO_SELECTION;
     }
 
     public int dependencyStrength(int from, int to) {
-        return model.dependencyStrength(from, to);
+        List<Module> modules = getVisibleModules();
+
+        return modules.get(from).getDependencyStrength(modules.get(to));
     }
 
-    public Iterable<Module> getVisibleModules() {
-        return model.getModules();
+    public List<Module> getVisibleModules() {
+        List<Module> modules = new ArrayList<Module>();
+        
+        addVisibleModules(modules, model.getModules());
+        
+        return modules;
+    }
+
+    private void addVisibleModules(List<Module> result, List<Module> modules) {
+        for (Module module : modules) {
+            result.add(module);
+            if (openedModules.contains(module))
+                addVisibleModules(result, module.getChildren());
+        }
     }
 
     public Module getModuleAt(int index) {
-        return model.getModuleAt(index);
+        return getVisibleModules().get(index);
     }
 
     public void setSelectedModule(Module module) {
@@ -69,8 +88,10 @@ final class DependencyMatrixViewModel {
     }
 
     public void sortModules() {
-        model.sortModules();
-        fireStateChanged();
+        if (selectedModule != null) {
+            selectedModule.sortChildren();
+            fireStateChanged();
+        }
     }
 
     public void moveSelectedModule(MoveDirection direction) {
@@ -88,5 +109,15 @@ final class DependencyMatrixViewModel {
                 throw new IllegalArgumentException("unknown MoveDirection: " + direction);    
             }
         }
+    }
+
+    public void openSelectedModule() {
+        if (selectedModule != null && openedModules.add(selectedModule))
+            fireStateChanged();
+    }
+
+    public void closeSelectedModule() {
+        if (selectedModule != null && openedModules.remove(selectedModule))
+            fireStateChanged();
     }
 }

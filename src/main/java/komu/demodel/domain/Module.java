@@ -3,9 +3,11 @@
  */
 package komu.demodel.domain;
 
+import static java.util.Collections.min;
 import static java.util.Collections.unmodifiableList;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -28,7 +30,12 @@ public final class Module {
     }
     
     public boolean isProgramModule() {
-        return programModule;
+        if (programModule) return true;
+        
+        for (Module child : children)
+            if (child.isProgramModule()) return true;
+        
+        return false;
     }
     
     public void markAsProgramModule() {
@@ -49,12 +56,43 @@ public final class Module {
         return count;
     }
     
+    public void addChild(Module child) {
+        if (child == null) throw new NullPointerException("null child");
+        
+        children.add(child);
+    }
+    
     public List<Module> getChildren() {
         return unmodifiableList(children);
     }
     
     public int getDependencyStrength(Module module) {
-        return getDirectDependencyStrength(module);
+        List<Module> myAncestors = getSelfAndAncestors();
+        if (myAncestors.contains(module)) return 0;
+        
+        List<Module> targetAncestors = module.getSelfAndAncestors();
+        if (targetAncestors.contains(this)) return 0;
+        
+        int strength = 0;
+        for (Module ancestor : myAncestors)
+            for (Module target : targetAncestors)
+                strength += ancestor.getDirectDependencyStrength(target);
+
+        return strength;
+    }
+    
+    private List<Module> getSelfAndAncestors() {
+        List<Module> result = new ArrayList<Module>();
+        result.add(this);
+        addAncestors(result);
+        return result;
+    }
+    
+    private void addAncestors(List<Module> result) {
+        for (Module child : children) {
+            result.add(child);
+            child.addAncestors(result);
+        }
     }
 
     private int getDirectDependencyStrength(Module module) {
@@ -80,5 +118,48 @@ public final class Module {
     @Override
     public String toString() {
         return name;
+    }
+    
+    public void sortChildren() {
+        List<Module> workList = new ArrayList<Module>(children);
+        children.clear();
+        
+        while (!workList.isEmpty()) {
+            Module module = pickModuleWithLeastIncomingDependencies(workList);
+            workList.remove(module);
+            children.add(module);
+        }
+    }
+
+    private static Module pickModuleWithLeastIncomingDependencies(List<Module> modules) {
+        assert !modules.isEmpty();
+
+        List<ModuleWithWeight> weightedModules = new ArrayList<ModuleWithWeight>(modules.size());
+        for (Module module : modules) 
+            weightedModules.add(new ModuleWithWeight(module, incomingDependencies(module, modules)));
+    
+        return min(weightedModules).module;
+    }
+    
+    private static int incomingDependencies(Module module, Collection<Module> modules) {
+        int sum = 0;
+        for (Module m : modules)
+            sum += m.getDependencyStrength(module);
+        return sum;
+    }
+    
+    private static class ModuleWithWeight implements Comparable<ModuleWithWeight> {
+
+        final Module module;
+        final int weight;
+
+        public ModuleWithWeight(Module module, int weight) {
+            this.module = module;
+            this.weight = weight;
+        }
+        
+        public int compareTo(ModuleWithWeight o) {
+            return weight - o.weight;
+        }
     }
 }
