@@ -35,6 +35,8 @@ final class DependencyMatrixViewModel {
         if (root == null) throw new NullPointerException("null root");
         
         this.root = root;
+        this.selectedModule = root;
+        openedModules.add(root);
     }
 
     public void addListener(ChangeListener listener) {
