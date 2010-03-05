@@ -212,7 +212,7 @@ public class DependencyMatrixView extends JComponent {
             }
             
             g.drawString(module.getName(), PLUS_WIDTH + dx + textdx, yy);
-            g.drawString(num, PLUS_WIDTH + dx + leftWidth - numWidth - textdx, yy);
+            g.drawString(num, dx + leftWidth - numWidth - textdx, yy);
             
             moduleNumber++;
         }
