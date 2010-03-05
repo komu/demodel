@@ -45,15 +45,12 @@ final class DependencyMatrixViewModel {
         listeners.stateChanged(new ChangeEvent(this));    
     }
 
+    public Module getSelectedModule() {
+        return selectedModule;
+    }
+    
     public int getVisibleModuleCount() {
         return getVisibleModules().size();
-    }
-
-    /**
-     * Returns the index of selected module, or {@link #NO_SELECTION} if no module is selected.
-     */
-    public int getIndexOfSelectedModule() {
-        return (selectedModule != null) ? getVisibleModules().indexOf(selectedModule) : NO_SELECTION;
     }
 
     public int dependencyStrength(int from, int to) {
@@ -88,6 +85,20 @@ final class DependencyMatrixViewModel {
             fireStateChanged();
         }
     }
+    
+    public void moveSelection(MoveDirection direction) {
+        if (selectedModule == null) return;
+        
+        List<Module> visibleModules = getVisibleModules();
+        int index = visibleModules.indexOf(selectedModule);
+        assert index != -1;
+        
+        int newIndex = index + direction.delta;
+        if (newIndex >= 0 && newIndex < visibleModules.size()) {
+            selectedModule = visibleModules.get(newIndex);
+            fireStateChanged();
+        }
+    }
 
     public void sortModules() {
         if (selectedModule != null) {
@@ -111,5 +122,9 @@ final class DependencyMatrixViewModel {
     public void closeSelectedModule() {
         if (selectedModule != null && openedModules.remove(selectedModule))
             fireStateChanged();
+    }
+    
+    public boolean isOpened(Module module) {
+        return openedModules.contains(module);
     }
 }

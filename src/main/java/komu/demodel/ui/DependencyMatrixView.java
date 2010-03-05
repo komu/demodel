@@ -18,6 +18,7 @@ import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.util.List;
 
 import javax.swing.JComponent;
 import javax.swing.event.ChangeEvent;
@@ -37,6 +38,7 @@ public class DependencyMatrixView extends JComponent {
     private final Color headerBackgroundSelected = new Color(200, 200, 255).brighter();
     private final Color gridColor = new Color(100, 100, 140);
     private final Color violationColor = Color.RED;
+    private static final int PLUS_WIDTH = 20;
     
     public DependencyMatrixView(Module root) {
         if (root == null) throw new NullPointerException("null root");
@@ -89,7 +91,8 @@ public class DependencyMatrixView extends JComponent {
         Insets insets = getInsets();
         int dx = insets.left;
         int dy = insets.top;
-        int moduleCount = model.getVisibleModuleCount();
+        List<Module> visibleModules = model.getVisibleModules();
+        int moduleCount = visibleModules.size();
         
         FontMetrics hfm = getFontMetrics(headerFont);
         
@@ -116,8 +119,8 @@ public class DependencyMatrixView extends JComponent {
         g.fillRect(dx + leftWidth, dy, width - leftWidth, cellHeight);
         
         // Draw the background for selected module, if there is one
-        int selectedModuleIndex = model.getIndexOfSelectedModule();
-        if (selectedModuleIndex != DependencyMatrixViewModel.NO_SELECTION) {
+        if (model.getSelectedModule() != null) {
+            int selectedModuleIndex = visibleModules.indexOf(model.getSelectedModule());
             g.setColor(headerBackgroundSelected);
             g.fillRect(dx, gridY + selectedModuleIndex * cellHeight, leftWidth, cellHeight);
         }
@@ -199,10 +202,16 @@ public class DependencyMatrixView extends JComponent {
         for (Module module : model.getVisibleModules()) {
             String num = String.valueOf(moduleNumber);
             int numWidth = hfm.stringWidth(num);
-            
             int yy = headerYOffset + (moduleNumber * cellHeight); 
-            g.drawString(module.getName(), dx + textdx, yy);
-            g.drawString(num, dx + leftWidth - numWidth - textdx, yy);
+            
+            if (model.isOpened(module)) {
+                g.drawString("-", dx + textdx, yy);
+            } else {
+                g.drawString("+", dx + textdx, yy);
+            }
+            
+            g.drawString(module.getName(), PLUS_WIDTH + dx + textdx, yy);
+            g.drawString(num, PLUS_WIDTH + dx + leftWidth - numWidth - textdx, yy);
             
             moduleNumber++;
         }
@@ -251,7 +260,7 @@ public class DependencyMatrixView extends JComponent {
         for (Module module : model.getVisibleModules())
             leftWidth = max(leftWidth, hfm.stringWidth(module.getName()));            
         
-        return leftWidth + extraWidth;
+        return PLUS_WIDTH + leftWidth + extraWidth;
     }
     
     private boolean containsViolation(int from, int to) {
@@ -276,11 +285,17 @@ public class DependencyMatrixView extends JComponent {
         public void keyPressed(KeyEvent e) {
             switch (e.getKeyCode()) {
             case KeyEvent.VK_UP:
-                model.moveSelectedModule(MoveDirection.UP);
+                if (e.isShiftDown())
+                    model.moveSelectedModule(MoveDirection.UP);
+                else
+                    model.moveSelection(MoveDirection.UP);
                 e.consume();
                 break;
             case KeyEvent.VK_DOWN:
-                model.moveSelectedModule(MoveDirection.DOWN);
+                if (e.isShiftDown())
+                    model.moveSelectedModule(MoveDirection.DOWN);
+                else
+                    model.moveSelection(MoveDirection.DOWN);
                 e.consume();
                 break;
             case KeyEvent.VK_S:
