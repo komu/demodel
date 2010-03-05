@@ -219,13 +219,13 @@ public class DependencyMatrixView extends JComponent {
             int yy = headerYOffset + (moduleNumber * cellHeight); 
             
             int depthDx = module.getDepth() * DEPTH_DELTA;
-            if (model.isOpened(module)) {
-                g.drawString("-", depthDx + dx + textdx, yy);
-            } else if (!module.isLeaf()) {
-                g.drawString("+", depthDx + dx + textdx, yy);
-            }
+            int xx = depthDx + dx + textdx;
+            if (model.isOpened(module))
+                g.drawString("-", xx, yy);
+            else if (!module.isLeaf())
+                g.drawString("+", xx, yy);
             
-            g.drawString(module.getLocalName(), depthDx + PLUS_WIDTH + dx + textdx, yy);
+            g.drawString(module.getLocalName(), PLUS_WIDTH + xx, yy);
             g.drawString(num, dx + leftWidth - numWidth - textdx, yy);
             
             moduleNumber++;
