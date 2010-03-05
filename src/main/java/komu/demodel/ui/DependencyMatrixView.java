@@ -206,7 +206,7 @@ public class DependencyMatrixView extends JComponent {
             
             if (model.isOpened(module)) {
                 g.drawString("-", dx + textdx, yy);
-            } else {
+            } else if (!module.isLeaf()) {
                 g.drawString("+", dx + textdx, yy);
             }
             
