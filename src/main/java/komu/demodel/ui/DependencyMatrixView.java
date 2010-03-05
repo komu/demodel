@@ -213,7 +213,7 @@ public class DependencyMatrixView extends JComponent {
                 g.drawString("+", depthDx + dx + textdx, yy);
             }
             
-            g.drawString(module.getName(), depthDx + PLUS_WIDTH + dx + textdx, yy);
+            g.drawString(module.getLocalName(), depthDx + PLUS_WIDTH + dx + textdx, yy);
             g.drawString(num, dx + leftWidth - numWidth - textdx, yy);
             
             moduleNumber++;
@@ -261,7 +261,7 @@ public class DependencyMatrixView extends JComponent {
         int extraWidth = 2 * hfm.stringWidth(" 999");
         
         for (Module module : model.getAllModules())
-            leftWidth = max(leftWidth, hfm.stringWidth(module.getName()) + module.getDepth() * DEPTH_DELTA);
+            leftWidth = max(leftWidth, hfm.stringWidth(module.getLocalName()) + module.getDepth() * DEPTH_DELTA);
         
         return PLUS_WIDTH + leftWidth + extraWidth;
     }

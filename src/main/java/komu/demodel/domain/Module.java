@@ -30,7 +30,7 @@ public final class Module {
         if (parent != null)
             parent.children.add(this);
     }
-    
+   
     public int getDepth() {
         return (parent != null) ? parent.getDepth() + 1 : 0;
     }
@@ -38,9 +38,17 @@ public final class Module {
     public Module getParent() {
         return parent;
     }
- 
+    
     public String getName() {
         return name;
+    }
+    
+    public String getLocalName() {
+        if (parent == null) return name;
+        
+        return name.startsWith(parent.getName() + ".") 
+                ? name.substring(parent.getName().length() + 1)
+                : name;
     }
     
     public boolean isProgramModule() {
