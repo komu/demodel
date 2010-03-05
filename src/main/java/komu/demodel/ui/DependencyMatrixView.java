@@ -32,7 +32,7 @@ public class DependencyMatrixView extends JComponent {
     private static final long serialVersionUID = 1L;
     
     private final DependencyMatrixViewModel model;
-    private final Font headerFont = new Font("dialog", Font.BOLD, 12);
+    private final Font headerFont = new Font("dialog", Font.PLAIN, 12);
     private final Font gridFont = new Font("dialog", Font.PLAIN, 11);
     private final Color headerBackground = new Color(200, 200, 255);
     private final Color headerBackgroundSelected = new Color(200, 200, 255).brighter();
