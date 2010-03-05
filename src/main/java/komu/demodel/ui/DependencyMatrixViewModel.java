@@ -129,4 +129,16 @@ final class DependencyMatrixViewModel {
     public boolean isOpened(Module module) {
         return openedModules.contains(module);
     }
+
+    public List<Module> getAllModules() {
+        List<Module> result = new ArrayList<Module>();
+        addModulesRootedAt(result, root);
+        return result;
+    }
+    
+    private void addModulesRootedAt(List<Module> result, Module module) {
+        result.add(module);
+        for (Module child : module.getChildren())
+            addModulesRootedAt(result, child);
+    }
 }

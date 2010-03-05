@@ -258,7 +258,7 @@ public class DependencyMatrixView extends JComponent {
         int leftWidth = 20;
         int extraWidth = 2 * hfm.stringWidth(" 999");
         
-        for (Module module : model.getVisibleModules())
+        for (Module module : model.getAllModules())
             leftWidth = max(leftWidth, hfm.stringWidth(module.getName()));            
         
         return PLUS_WIDTH + leftWidth + extraWidth;
