@@ -13,6 +13,7 @@ import java.awt.FontMetrics;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.Insets;
+import java.awt.Rectangle;
 import java.awt.RenderingHints;
 import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
@@ -57,7 +58,7 @@ public class DependencyMatrixView extends JComponent {
     private void updateSize() {
         Insets insets = getInsets();
         int leftWidth = calculateLeftHeaderWidth();
-        int cellSize = getCellSize();
+        int cellSize = getCellHeight();
         
         int width = insets.left + insets.right 
                   + leftWidth + (cellSize * model.getVisibleModuleCount());
@@ -98,7 +99,7 @@ public class DependencyMatrixView extends JComponent {
         
         FontMetrics hfm = getFontMetrics(headerFont);
         
-        int cellHeight = getCellSize();
+        int cellHeight = getCellHeight();
         int cellWidth = cellHeight;
         int textdx = (cellHeight - hfm.charWidth('0')) / 2;
         
@@ -190,15 +191,26 @@ public class DependencyMatrixView extends JComponent {
             g.fillRect(xx + 1, yy + 1, cellWidth - 1, cellHeight - 1);
         }
     }
+    
+    private int getHeaderYOffset() {
+        Insets insets = getInsets();
+        int dy = insets.top;
+
+        int cellHeight = getCellHeight();
+        int gridY = dy + cellHeight;
+        FontMetrics hfm = getFontMetrics(headerFont);
+        
+        int headerFontHeight = hfm.getHeight();
+        return gridY - ((cellHeight - headerFontHeight) / 2) - hfm.getDescent();
+    }
 
     private void drawLeftModuleList(Graphics2D g, int dx, int dy, int textdx, int leftWidth) {
-        int cellHeight = getCellSize();
-        int gridY = dy + cellHeight;
+        int cellHeight = getCellHeight();
+        int headerYOffset = getHeaderYOffset();
+
         FontMetrics hfm = g.getFontMetrics(headerFont);
         
         g.setColor(getForeground());
-        int headerFontHeight = hfm.getHeight();
-        int headerYOffset = gridY - ((cellHeight - headerFontHeight) / 2) - hfm.getDescent();
         
         int moduleNumber = 1;
         for (Module module : model.getVisibleModules()) {
@@ -233,7 +245,7 @@ public class DependencyMatrixView extends JComponent {
         }
     }
 
-    private int getCellSize() {
+    private int getCellHeight() {
         return (4 * getFontMetrics(headerFont).getHeight()) / 3;
     }
     
@@ -241,7 +253,7 @@ public class DependencyMatrixView extends JComponent {
         Insets insets = getInsets();
         int dx = insets.left;
         int dy = insets.top;
-        int cellSize = getCellSize();
+        int cellSize = getCellHeight();
         
         int leftWidth = calculateLeftHeaderWidth();
         int ypos = y - dy - cellSize;
@@ -269,7 +281,20 @@ public class DependencyMatrixView extends JComponent {
     private boolean containsViolation(int from, int to) {
         return from > to && model.dependencyStrength(from, to) > 0;
     }
-    
+
+    private void moveSelection(MoveDirection direction) {
+        model.moveSelection(direction);
+        Module selected = model.getSelectedModule();
+        if (selected != null) {
+            int index = model.getVisibleModules().indexOf(selected);
+            
+            int cellHeight = getCellHeight();
+            int yy = getHeaderYOffset() + (index * getCellHeight()); 
+
+            scrollRectToVisible(new Rectangle(0, yy - cellHeight, 10, cellHeight * 3));
+        }
+    }
+
     private class MyModelListener implements ChangeListener {
         public void stateChanged(ChangeEvent e) {
             updateSize();
@@ -292,14 +317,14 @@ public class DependencyMatrixView extends JComponent {
                 if (e.isShiftDown())
                     model.moveSelectedModule(MoveDirection.UP);
                 else
-                    model.moveSelection(MoveDirection.UP);
+                    moveSelection(MoveDirection.UP);
                 e.consume();
                 break;
             case KeyEvent.VK_DOWN:
                 if (e.isShiftDown())
                     model.moveSelectedModule(MoveDirection.DOWN);
-                else
-                    model.moveSelection(MoveDirection.DOWN);
+                else 
+                    moveSelection(MoveDirection.DOWN);
                 e.consume();
                 break;
             case KeyEvent.VK_S:
