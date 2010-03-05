@@ -304,13 +304,11 @@ public class DependencyMatrixView extends JComponent {
                 model.sortModules();
                 e.consume();
                 break;
-            case KeyEvent.VK_O:
-                model.openSelectedModule();
-                e.consume();
-                break;
-            case KeyEvent.VK_C:
-                model.closeSelectedModule();
-                e.consume();
+            case KeyEvent.VK_SPACE:
+                if (model.isOpened(model.getSelectedModule()))
+                    model.closeSelectedModule();
+                else
+                    model.openSelectedModule();
                 break;
             }
         }
