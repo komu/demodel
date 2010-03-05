@@ -46,14 +46,14 @@ public class DependencyMatrixView extends JComponent {
         this.model = new DependencyMatrixViewModel(root);
         this.model.addListener(new MyModelListener());
         
-        updatePreferredSize();
+        updateSize();
         setFocusable(true);
         
         addMouseListener(new MyMouseListener());
         addKeyListener(new MyKeyListener());
     }
 
-    private void updatePreferredSize() {
+    private void updateSize() {
         Insets insets = getInsets();
         int leftWidth = calculateLeftHeaderWidth();
         int cellSize = getCellSize();
@@ -62,8 +62,9 @@ public class DependencyMatrixView extends JComponent {
                   + leftWidth + (cellSize * model.getVisibleModuleCount());
         int height = insets.top + insets.bottom
                   + (cellSize * (1 + model.getVisibleModuleCount()));
-        
+
         setPreferredSize(new Dimension(width, height));
+        setSize(new Dimension(width, height));
     }
     
     @Override
@@ -269,6 +270,7 @@ public class DependencyMatrixView extends JComponent {
     
     private class MyModelListener implements ChangeListener {
         public void stateChanged(ChangeEvent e) {
+            updateSize();
             repaint();
         }
     }
