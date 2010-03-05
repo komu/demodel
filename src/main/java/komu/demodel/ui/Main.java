@@ -15,9 +15,11 @@ import komu.demodel.parser.java.JavaDependencyParser;
 public class Main {
     
     public static void main(String[] args) {
+        String directory = (args.length == 0) ? "." : args[0];
+        
         try {
             JavaDependencyParser parser = new JavaDependencyParser();
-            parser.parseDirectory(new File("."));
+            parser.parseDirectory(new File(directory));
             Module root = parser.getRoot();
             
             UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
