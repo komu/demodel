@@ -39,6 +39,7 @@ public class DependencyMatrixView extends JComponent {
     private final Color gridColor = new Color(100, 100, 140);
     private final Color violationColor = Color.RED;
     private static final int PLUS_WIDTH = 20;
+    private static final int DEPTH_DELTA = 10;
     
     public DependencyMatrixView(Module root) {
         if (root == null) throw new NullPointerException("null root");
@@ -205,13 +206,14 @@ public class DependencyMatrixView extends JComponent {
             int numWidth = hfm.stringWidth(num);
             int yy = headerYOffset + (moduleNumber * cellHeight); 
             
+            int depthDx = module.getDepth() * DEPTH_DELTA;
             if (model.isOpened(module)) {
-                g.drawString("-", dx + textdx, yy);
+                g.drawString("-", depthDx + dx + textdx, yy);
             } else if (!module.isLeaf()) {
-                g.drawString("+", dx + textdx, yy);
+                g.drawString("+", depthDx + dx + textdx, yy);
             }
             
-            g.drawString(module.getName(), PLUS_WIDTH + dx + textdx, yy);
+            g.drawString(module.getName(), depthDx + PLUS_WIDTH + dx + textdx, yy);
             g.drawString(num, dx + leftWidth - numWidth - textdx, yy);
             
             moduleNumber++;
@@ -259,7 +261,7 @@ public class DependencyMatrixView extends JComponent {
         int extraWidth = 2 * hfm.stringWidth(" 999");
         
         for (Module module : model.getAllModules())
-            leftWidth = max(leftWidth, hfm.stringWidth(module.getName()));            
+            leftWidth = max(leftWidth, hfm.stringWidth(module.getName()) + module.getDepth() * DEPTH_DELTA);
         
         return PLUS_WIDTH + leftWidth + extraWidth;
     }

@@ -31,6 +31,10 @@ public final class Module {
             parent.children.add(this);
     }
     
+    public int getDepth() {
+        return (parent != null) ? parent.getDepth() + 1 : 0;
+    }
+    
     public Module getParent() {
         return parent;
     }
