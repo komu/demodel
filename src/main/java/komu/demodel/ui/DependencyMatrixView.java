@@ -19,9 +19,15 @@ import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.awt.image.BufferedImage;
+import java.io.File;
+import java.io.IOError;
+import java.io.IOException;
 import java.util.List;
 
+import javax.imageio.ImageIO;
 import javax.swing.JComponent;
+import javax.swing.JFileChooser;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 
@@ -39,6 +45,7 @@ public class DependencyMatrixView extends JComponent {
     private final Color headerBackgroundSelected = new Color(200, 200, 255).brighter();
     private final Color gridColor = new Color(100, 100, 140);
     private final Color violationColor = Color.RED;
+    private final JFileChooser exportFileChooser = new JFileChooser();
     private static final int PLUS_WIDTH = 20;
     private static final int DEPTH_DELTA = 10;
     
@@ -294,6 +301,20 @@ public class DependencyMatrixView extends JComponent {
             scrollRectToVisible(new Rectangle(0, yy - cellHeight, 10, cellHeight * 3));
         }
     }
+    
+    private void exportImage() {
+    	try {
+    		if (exportFileChooser.showSaveDialog(this) != JFileChooser.APPROVE_OPTION)
+    			return;
+    		
+    		BufferedImage image = new BufferedImage(getWidth(), getHeight(), BufferedImage.TYPE_INT_RGB);
+    		paintComponent(image.createGraphics());
+    	
+    		ImageIO.write(image, "PNG", exportFileChooser.getSelectedFile());
+    	} catch (IOException e) {
+    		e.printStackTrace();
+    	}
+    }
 
     private class MyModelListener implements ChangeListener {
         public void stateChanged(ChangeEvent e) {
@@ -337,6 +358,9 @@ public class DependencyMatrixView extends JComponent {
                 else
                     model.openSelectedModule();
                 break;
+            case KeyEvent.VK_X:
+            	exportImage();
+            	break;
             }
         }
     }
