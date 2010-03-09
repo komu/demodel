@@ -40,6 +40,12 @@ public class SignatureUtilsTest {
                           "foo.Baz");
     }
     
+    @Test
+    public void complexMethodSignature() {
+    	assertMethodTypes("<T:Ljava/lang/Object;>(Ljava/lang/Class<*>;)Lfoo/bar/Baz$FieldSet<TT;>;",
+    			":Ljava.lang.Object", "java.lang.Class", "foo.bar.Baz$FieldSet", "T");
+    }
+    
     private static void assertTypes(String signature, String... classNames) {
         assertReturnTypes(classNames, getTypesFromGenericSignature(signature));
     }

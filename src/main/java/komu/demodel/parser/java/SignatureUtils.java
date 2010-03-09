@@ -7,25 +7,16 @@ import static java.util.Collections.emptyList;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 import org.objectweb.asm.Type;
 
 public class SignatureUtils {
     
-    private static final Pattern METHOD_SIGNATURE_PATTERN =
-        Pattern.compile("^\\((.*)\\)(.*)$");
-
-    
     public static List<Type> getTypesFromGenericMethodSignature(String signature) {
-        Matcher m = METHOD_SIGNATURE_PATTERN.matcher(signature);
-        if (!m.matches())
-            throw new IllegalArgumentException("invalid signature: " + signature);
-        
         List<Type> result = new ArrayList<Type>();
-        result.addAll(getTypesFromGenericSignature(m.group(1)));
-        result.addAll(getTypesFromGenericSignature(m.group(2)));
+        for (String part : signature.split("[\\(\\)]+"))
+        	if (part.length() != 0)
+        		result.addAll(getTypesFromGenericSignature(part));	
         return result;
     }
     
@@ -33,10 +24,14 @@ public class SignatureUtils {
         if (signature.length() == 0) return emptyList();
         
         try {
-            String[] parts = signature.split("[;<>]+"); 
+            String[] parts = signature.split("[;<>\\(\\)]+"); 
             List<Type> types = new ArrayList<Type>(parts.length);
             for (String part : parts)
-                types.add(Type.getType((part + ";")));
+            	if (part.length() != 0) {
+            		Type type = Type.getType((part + ";"));
+            		if (!type.getClassName().equals(""))
+            			types.add(type);
+            	}
             return types;
         } catch (Exception e) {
             throw new IllegalArgumentException("invalid signature: " + signature);
