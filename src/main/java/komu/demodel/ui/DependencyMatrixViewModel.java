@@ -141,4 +141,8 @@ final class DependencyMatrixViewModel {
         for (Module child : module.getChildren())
             addModulesRootedAt(result, child);
     }
+
+	public boolean hasSelection() {
+		return selectedModule != null;
+	}
 }

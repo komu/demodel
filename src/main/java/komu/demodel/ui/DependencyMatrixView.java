@@ -15,19 +15,21 @@ import java.awt.Graphics2D;
 import java.awt.Insets;
 import java.awt.Rectangle;
 import java.awt.RenderingHints;
+import java.awt.event.ActionEvent;
 import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.image.BufferedImage;
-import java.io.File;
-import java.io.IOError;
 import java.io.IOException;
 import java.util.List;
 
 import javax.imageio.ImageIO;
+import javax.swing.AbstractAction;
+import javax.swing.Action;
 import javax.swing.JComponent;
 import javax.swing.JFileChooser;
+import javax.swing.KeyStroke;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 
@@ -56,6 +58,7 @@ public class DependencyMatrixView extends JComponent {
         this.model.addListener(new MyModelListener());
         
         updateSize();
+        updateCommandStates();
         setFocusable(true);
         
         addMouseListener(new MyMouseListener());
@@ -315,9 +318,15 @@ public class DependencyMatrixView extends JComponent {
     		e.printStackTrace();
     	}
     }
+    
+	private void updateCommandStates() {
+		sortModulesAction.setEnabled(model.hasSelection());
+		toggleAction.setEnabled(model.hasSelection());
+	}
 
     private class MyModelListener implements ChangeListener {
         public void stateChanged(ChangeEvent e) {
+        	updateCommandStates();
             updateSize();
             repaint();
         }
@@ -329,6 +338,35 @@ public class DependencyMatrixView extends JComponent {
             model.setSelectedModule(findModuleAt(e.getX(), e.getY()));
         }
     }
+
+    public final Action exportAction = new AbstractAction("Export") {
+		public void actionPerformed(ActionEvent e) {
+			exportImage();
+		}
+    };
+    
+    public final Action sortModulesAction = new AbstractAction("Sort children") {
+    	{
+    		putValue(ACCELERATOR_KEY, KeyStroke.getKeyStroke('s'));
+    	}
+    	
+    	public void actionPerformed(ActionEvent e) {
+			model.sortModules();
+		}
+    };
+    
+    public final Action toggleAction = new AbstractAction("Toggle") {
+    	{
+    		putValue(ACCELERATOR_KEY, KeyStroke.getKeyStroke(' ')); 
+    	}
+    	
+		public void actionPerformed(ActionEvent e) {
+            if (model.isOpened(model.getSelectedModule()))
+                model.closeSelectedModule();
+            else
+                model.openSelectedModule();
+		}
+    };
     
     private class MyKeyListener extends KeyAdapter {
         @Override
@@ -348,19 +386,6 @@ public class DependencyMatrixView extends JComponent {
                     moveSelection(MoveDirection.DOWN);
                 e.consume();
                 break;
-            case KeyEvent.VK_S:
-                model.sortModules();
-                e.consume();
-                break;
-            case KeyEvent.VK_SPACE:
-                if (model.isOpened(model.getSelectedModule()))
-                    model.closeSelectedModule();
-                else
-                    model.openSelectedModule();
-                break;
-            case KeyEvent.VK_X:
-            	exportImage();
-            	break;
             }
         }
     }
