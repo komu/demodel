@@ -16,7 +16,6 @@ import java.awt.Insets;
 import java.awt.Rectangle;
 import java.awt.RenderingHints;
 import java.awt.event.ActionEvent;
-import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
@@ -62,7 +61,15 @@ public class DependencyMatrixView extends JComponent {
         setFocusable(true);
         
         addMouseListener(new MyMouseListener());
-        addKeyListener(new MyKeyListener());
+        
+        getInputMap().put(KeyStroke.getKeyStroke(KeyEvent.VK_UP, 0), "move-selection-up");
+        getInputMap().put(KeyStroke.getKeyStroke(KeyEvent.VK_DOWN, 0), "move-selection-down");
+        getInputMap().put(KeyStroke.getKeyStroke(KeyEvent.VK_UP, KeyEvent.SHIFT_DOWN_MASK), "move-selected-module-up");
+        getInputMap().put(KeyStroke.getKeyStroke(KeyEvent.VK_DOWN, KeyEvent.SHIFT_DOWN_MASK), "move-selected-module-down");
+        getActionMap().put("move-selection-up", new MoveSelectionAction(MoveDirection.UP));
+        getActionMap().put("move-selection-down", new MoveSelectionAction(MoveDirection.DOWN));
+        getActionMap().put("move-selected-module-up", new MoveSelectedModuleAction(MoveDirection.UP));
+        getActionMap().put("move-selected-module-down", new MoveSelectedModuleAction(MoveDirection.DOWN));
     }
 
     private void updateSize() {
@@ -292,19 +299,6 @@ public class DependencyMatrixView extends JComponent {
         return from > to && model.dependencyStrength(from, to) > 0;
     }
 
-    private void moveSelection(MoveDirection direction) {
-        model.moveSelection(direction);
-        Module selected = model.getSelectedModule();
-        if (selected != null) {
-            int index = model.getVisibleModules().indexOf(selected);
-            
-            int cellHeight = getCellHeight();
-            int yy = getHeaderYOffset() + (index * getCellHeight()); 
-
-            scrollRectToVisible(new Rectangle(0, yy - cellHeight, 10, cellHeight * 3));
-        }
-    }
-    
     private void exportImage() {
     	try {
     		if (exportFileChooser.showSaveDialog(this) != JFileChooser.APPROVE_OPTION)
@@ -368,25 +362,36 @@ public class DependencyMatrixView extends JComponent {
 		}
     };
     
-    private class MyKeyListener extends KeyAdapter {
-        @Override
-        public void keyPressed(KeyEvent e) {
-            switch (e.getKeyCode()) {
-            case KeyEvent.VK_UP:
-                if (e.isShiftDown())
-                    model.moveSelectedModule(MoveDirection.UP);
-                else
-                    moveSelection(MoveDirection.UP);
-                e.consume();
-                break;
-            case KeyEvent.VK_DOWN:
-                if (e.isShiftDown())
-                    model.moveSelectedModule(MoveDirection.DOWN);
-                else 
-                    moveSelection(MoveDirection.DOWN);
-                e.consume();
-                break;
-            }
-        }
+    private class MoveSelectionAction extends AbstractAction {
+    	private final MoveDirection direction;
+
+		public MoveSelectionAction(MoveDirection direction) {
+			this.direction = direction;
+    	}
+
+		public void actionPerformed(ActionEvent e) {
+	        model.moveSelection(direction);
+	        Module selected = model.getSelectedModule();
+	        if (selected != null) {
+	            int index = model.getVisibleModules().indexOf(selected);
+	            
+	            int cellHeight = getCellHeight();
+	            int yy = getHeaderYOffset() + (index * getCellHeight()); 
+
+	            scrollRectToVisible(new Rectangle(0, yy - cellHeight, 10, cellHeight * 3));
+	        }
+		}
+    }
+    
+    private class MoveSelectedModuleAction extends AbstractAction {
+    	private final MoveDirection direction;
+
+		public MoveSelectedModuleAction(MoveDirection direction) {
+			this.direction = direction;
+    	}
+
+		public void actionPerformed(ActionEvent e) {
+			model.moveSelectedModule(direction);
+		}
     }
 }
