@@ -39,6 +39,7 @@ public class Main {
                 project.addInputSource(new JarFileInputSource(file));
 
             JavaDependencyParser parser = new JavaDependencyParser();
+            
             for (InputSource source : project.getInputSources())
                 parser.parse(source);
 

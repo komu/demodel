@@ -21,6 +21,9 @@ public final class Module {
     private boolean programModule = false;
     private final List<Module> children = new ArrayList<Module>();
     private final Map<Module,Integer> strengths = new HashMap<Module,Integer>();
+
+    private final Map<Module,Integer> dependencyStrengths = new HashMap<Module,Integer>();
+    private List<Module> cachedSelfAndAncestors = null;
     
     public Module(String name, Module parent) {
         if (name ==  null) throw new NullPointerException("null name");
@@ -29,6 +32,14 @@ public final class Module {
         this.parent = parent;
         if (parent != null)
             parent.children.add(this);
+    }
+    
+    public void flushCaches() {
+        dependencyStrengths.clear();
+        cachedSelfAndAncestors = null;
+        
+        for (Module child : children)
+            child.flushCaches();
     }
    
     public int getDepth() {
@@ -93,25 +104,33 @@ public final class Module {
     }
     
     public int getDependencyStrength(Module module) {
-        List<Module> myAncestors = getSelfAndAncestors();
-        if (myAncestors.contains(module)) return 0;
-        
-        List<Module> targetAncestors = module.getSelfAndAncestors();
-        if (targetAncestors.contains(this)) return 0;
-        
-        int strength = 0;
-        for (Module ancestor : myAncestors)
-            for (Module target : targetAncestors)
-                strength += ancestor.getDirectDependencyStrength(target);
+        Integer cachedStrength = dependencyStrengths.get(module);
+        if (cachedStrength == null) {
+            List<Module> myAncestors = getSelfAndAncestors();
+            if (myAncestors.contains(module)) return 0;
+            
+            List<Module> targetAncestors = module.getSelfAndAncestors();
+            if (targetAncestors.contains(this)) return 0;
+            
+            int strength = 0;
+            for (Module ancestor : myAncestors)
+                for (Module target : targetAncestors)
+                    strength += ancestor.getDirectDependencyStrength(target);
+            
+            cachedStrength = strength;
+        }
 
-        return strength;
+        return cachedStrength.intValue();
     }
     
     private List<Module> getSelfAndAncestors() {
-        List<Module> result = new ArrayList<Module>();
-        result.add(this);
-        addAncestors(result);
-        return result;
+        if (cachedSelfAndAncestors == null) {
+            List<Module> result = new ArrayList<Module>();
+            result.add(this);
+            addAncestors(result);
+            cachedSelfAndAncestors = unmodifiableList(result);
+        }
+        return cachedSelfAndAncestors;
     }
     
     private void addAncestors(List<Module> result) {

@@ -4,6 +4,7 @@
 package komu.demodel.ui;
 
 import static java.util.Collections.singletonList;
+import static java.util.Collections.unmodifiableList;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -30,6 +31,7 @@ final class DependencyMatrixViewModel {
     private Module selectedModule;
     private final IdentityHashSet<Module> openedModules = new IdentityHashSet<Module>();
     private final ChangeListenerList listeners = new ChangeListenerList();
+    private List<Module> cachedVisibleModules;
     
     DependencyMatrixViewModel(Module root) {
         if (root == null) throw new NullPointerException("null root");
@@ -37,6 +39,11 @@ final class DependencyMatrixViewModel {
         this.root = root;
         this.selectedModule = root;
         openedModules.add(root);
+    }
+    
+    public void flushCaches() {
+        cachedVisibleModules = null;
+        root.flushCaches();
     }
 
     public void addListener(ChangeListener listener) {
@@ -62,11 +69,14 @@ final class DependencyMatrixViewModel {
     }
 
     public List<Module> getVisibleModules() {
-        List<Module> modules = new ArrayList<Module>();
+        if (cachedVisibleModules == null) {
+            List<Module> modules = new ArrayList<Module>();
         
-        addVisibleModules(modules, singletonList(root));
+            addVisibleModules(modules, singletonList(root));
         
-        return modules;
+            cachedVisibleModules = unmodifiableList(modules);
+        }
+        return cachedVisibleModules;
     }
 
     private void addVisibleModules(List<Module> result, Iterable<Module> modules) {
@@ -117,13 +127,17 @@ final class DependencyMatrixViewModel {
     }
 
     public void openSelectedModule() {
-        if (selectedModule != null && openedModules.add(selectedModule))
+        if (selectedModule != null && openedModules.add(selectedModule)) {
+            cachedVisibleModules = null;
             fireStateChanged();
+        }
     }
 
     public void closeSelectedModule() {
-        if (selectedModule != null && openedModules.remove(selectedModule))
+        if (selectedModule != null && openedModules.remove(selectedModule)) {
+            cachedVisibleModules = null;
             fireStateChanged();
+        }
     }
     
     public boolean isOpened(Module module) {
@@ -142,7 +156,7 @@ final class DependencyMatrixViewModel {
             addModulesRootedAt(result, child);
     }
 
-	public boolean hasSelection() {
-		return selectedModule != null;
-	}
+    public boolean hasSelection() {
+        return selectedModule != null;
+    }
 }
