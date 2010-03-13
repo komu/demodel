@@ -31,4 +31,9 @@ public final class ClassDirectoryInputSource implements InputSource {
 
         return resources;
     }
+    
+    @Override
+    public String toString() {
+        return directory.toString();
+    }
 }
