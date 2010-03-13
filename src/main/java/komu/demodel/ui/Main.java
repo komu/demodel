@@ -14,9 +14,11 @@ import javax.swing.JMenu;
 import javax.swing.JMenuBar;
 import javax.swing.JScrollPane;
 import javax.swing.UIManager;
+import javax.swing.filechooser.FileFilter;
 
 import komu.demodel.domain.ClassDirectoryInputSource;
 import komu.demodel.domain.InputSource;
+import komu.demodel.domain.JarFileInputSource;
 import komu.demodel.domain.Module;
 import komu.demodel.domain.Project;
 import komu.demodel.parser.java.JavaDependencyParser;
@@ -27,20 +29,14 @@ public class Main {
         try {
             UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
 
-            File directory = (args.length == 0) ? null : new File(args[0]);
-            if (directory == null) {
-                JFileChooser chooser = new JFileChooser();
-                chooser.setDialogTitle("Select directory of class-files");
-                chooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
-                if (chooser.showOpenDialog(null) == JFileChooser.APPROVE_OPTION) {
-                    directory = chooser.getSelectedFile();
-                } else {
-                    return;
-                }
-            }
+            File file = (args.length == 0) ? chooseFileOrDirectory() : new File(args[0]);
+            if (file == null) return;
 
-            Project project = new Project(directory.toString());
-            project.addInputSource(new ClassDirectoryInputSource(directory));
+            Project project = new Project(file.toString());
+            if (file.isDirectory())
+                project.addInputSource(new ClassDirectoryInputSource(file));
+            else
+                project.addInputSource(new JarFileInputSource(file));
 
             JavaDependencyParser parser = new JavaDependencyParser();
             for (InputSource source : project.getInputSources())
@@ -78,6 +74,26 @@ public class Main {
         }
     }
 
+    private static File chooseFileOrDirectory() {
+        JFileChooser chooser = new JFileChooser();
+        chooser.setDialogTitle("Select directory of class-files");
+        chooser.setFileSelectionMode(JFileChooser.FILES_AND_DIRECTORIES);
+        chooser.setFileFilter(new FileFilter() {
+            @Override
+            public boolean accept(File f) {
+                return f.isDirectory() || f.getName().endsWith(".jar");
+            }
+            @Override
+            public String getDescription() {
+                return "JAR-files and directories";
+            }
+        });
+
+        return (chooser.showOpenDialog(null) == JFileChooser.APPROVE_OPTION)
+            ? chooser.getSelectedFile()
+            : null;
+    }
+
     private static class ExitAction extends AbstractAction {
         public ExitAction() {
             super("Exit");
@@ -88,5 +104,4 @@ public class Main {
             System.exit(0);
         }
     }
-
 }
