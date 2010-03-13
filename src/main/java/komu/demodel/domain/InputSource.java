@@ -3,8 +3,10 @@
  */
 package komu.demodel.domain;
 
+import java.io.IOException;
+
 import komu.demodel.utils.ResourceProvider;
 
 public interface InputSource {
-    ResourceProvider getResources();
+    ResourceProvider getResources() throws IOException;
 }
