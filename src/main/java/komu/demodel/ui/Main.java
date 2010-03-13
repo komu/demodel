@@ -8,6 +8,7 @@ import java.awt.event.KeyEvent;
 import java.io.File;
 
 import javax.swing.AbstractAction;
+import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 import javax.swing.JMenu;
 import javax.swing.JMenuBar;
@@ -20,13 +21,23 @@ import komu.demodel.parser.java.JavaDependencyParser;
 public class Main {
     
     public static void main(String[] args) {
-        String directory = (args.length == 0) ? "." : args[0];
-        
         try {
             UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
-        	
+
+            File directory = (args.length == 0) ? null : new File(args[0]);
+            if (directory == null) {
+            	JFileChooser chooser = new JFileChooser();
+            	chooser.setDialogTitle("Select directory of class-files");
+                chooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
+                if (chooser.showOpenDialog(null) == JFileChooser.APPROVE_OPTION) {
+                	directory = chooser.getSelectedFile();
+                } else {
+                	return;
+                }
+            }
+            
             JavaDependencyParser parser = new JavaDependencyParser();
-            parser.parseDirectory(new File(directory));
+            parser.parseDirectory(directory);
             Module root = parser.getRoot();
             
             DependencyMatrixView view = new DependencyMatrixView(root);
