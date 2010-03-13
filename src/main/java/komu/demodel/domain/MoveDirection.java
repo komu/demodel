@@ -1,3 +1,6 @@
+/*
+ * Copyright (C) 2010 Juha Komulainen. All rights reserved.
+ */
 package komu.demodel.domain;
 
 public enum MoveDirection {
