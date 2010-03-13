@@ -15,6 +15,7 @@ import komu.demodel.domain.DependencyType;
 import komu.demodel.domain.InputSource;
 import komu.demodel.domain.Module;
 import komu.demodel.utils.Resource;
+import komu.demodel.utils.ResourceProvider;
 
 import org.objectweb.asm.AnnotationVisitor;
 import org.objectweb.asm.Attribute;
@@ -36,8 +37,13 @@ public class JavaDependencyParser {
     private Module currentModule;
     
     public void parse(InputSource inputSource) throws IOException {
-    	for (Resource resource : inputSource.getResources())
+        ResourceProvider resources = inputSource.getResources();
+        try {
+            for (Resource resource : resources)
     		visitResource(resource);
+        } finally {
+            resources.close();
+        }
     }
     
     private void visitResource(Resource resource) throws IOException {

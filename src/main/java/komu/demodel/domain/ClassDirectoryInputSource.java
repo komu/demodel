@@ -4,13 +4,16 @@
 package komu.demodel.domain;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 
 import komu.demodel.utils.ExtensionFileFilter;
 import komu.demodel.utils.FileResource;
 import komu.demodel.utils.FileSet;
 import komu.demodel.utils.Resource;
+import komu.demodel.utils.ResourceProvider;
 
 public final class ClassDirectoryInputSource implements InputSource {
 
@@ -23,13 +26,22 @@ public final class ClassDirectoryInputSource implements InputSource {
     }
 
     @Override
-    public Iterable<Resource> getResources() {
-        List<Resource> resources = new ArrayList<Resource>();
+    public ResourceProvider getResources() {
+        final List<Resource> resources = new ArrayList<Resource>();
 
         for (File file : new FileSet(directory, new ExtensionFileFilter("class")))
             resources.add(new FileResource(file));
 
-        return resources;
+        return new ResourceProvider() {
+            @Override
+            public Iterator<Resource> iterator() {
+                return resources.iterator();
+            }
+            
+            @Override
+            public void close() throws IOException {
+            }
+        };
     }
     
     @Override

@@ -3,8 +3,8 @@
  */
 package komu.demodel.domain;
 
-import komu.demodel.utils.Resource;
+import komu.demodel.utils.ResourceProvider;
 
 public interface InputSource {
-    Iterable<Resource> getResources();
+    ResourceProvider getResources();
 }
