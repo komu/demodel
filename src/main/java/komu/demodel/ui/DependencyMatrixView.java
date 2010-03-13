@@ -341,7 +341,7 @@ public class DependencyMatrixView extends JComponent {
     
     public final Action sortModulesAction = new AbstractAction("Sort children") {
     	{
-    		putValue(ACCELERATOR_KEY, KeyStroke.getKeyStroke('s'));
+    		putValue(ACCELERATOR_KEY, KeyStroke.getKeyStroke(KeyEvent.VK_S, 0));
     	}
     	
     	public void actionPerformed(ActionEvent e) {
@@ -351,7 +351,7 @@ public class DependencyMatrixView extends JComponent {
     
     public final Action toggleAction = new AbstractAction("Toggle") {
     	{
-    		putValue(ACCELERATOR_KEY, KeyStroke.getKeyStroke(' ')); 
+    		putValue(ACCELERATOR_KEY, KeyStroke.getKeyStroke(KeyEvent.VK_SPACE, 0)); 
     	}
     	
 		public void actionPerformed(ActionEvent e) {
