@@ -15,48 +15,56 @@ import javax.swing.JMenuBar;
 import javax.swing.JScrollPane;
 import javax.swing.UIManager;
 
+import komu.demodel.domain.ClassDirectoryInputSource;
+import komu.demodel.domain.InputSource;
 import komu.demodel.domain.Module;
+import komu.demodel.domain.Project;
 import komu.demodel.parser.java.JavaDependencyParser;
 
 public class Main {
-    
+
     public static void main(String[] args) {
         try {
             UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
 
             File directory = (args.length == 0) ? null : new File(args[0]);
             if (directory == null) {
-            	JFileChooser chooser = new JFileChooser();
-            	chooser.setDialogTitle("Select directory of class-files");
+                JFileChooser chooser = new JFileChooser();
+                chooser.setDialogTitle("Select directory of class-files");
                 chooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
                 if (chooser.showOpenDialog(null) == JFileChooser.APPROVE_OPTION) {
-                	directory = chooser.getSelectedFile();
+                    directory = chooser.getSelectedFile();
                 } else {
-                	return;
+                    return;
                 }
             }
-            
+
+            Project project = new Project(directory.toString());
+            project.addInputSource(new ClassDirectoryInputSource(directory));
+
             JavaDependencyParser parser = new JavaDependencyParser();
-            parser.parseDirectory(directory);
+            for (InputSource source : project.getInputSources())
+                parser.parse(source);
+
             Module root = parser.getRoot();
-            
+
             DependencyMatrixView view = new DependencyMatrixView(root);
-            
+
             JMenu fileMenu = new JMenu("File");
             fileMenu.setMnemonic('F');
             fileMenu.add(view.exportAction);
             fileMenu.addSeparator();
             fileMenu.add(new ExitAction());
-            
+
             JMenu modulesMenu = new JMenu("Modules");
             modulesMenu.setMnemonic('M');
             modulesMenu.add(view.toggleAction);
             modulesMenu.add(view.sortModulesAction);
-            
+
             JMenuBar menuBar = new JMenuBar();
             menuBar.add(fileMenu);
             menuBar.add(modulesMenu);
-            
+
             JFrame frame = new JFrame("demodel");
             frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
             frame.setJMenuBar(menuBar);
@@ -64,22 +72,21 @@ public class Main {
             frame.setSize(800, 600);
             frame.setLocationRelativeTo(null);
             frame.setVisible(true);
-            
-           
+
         } catch (Throwable e) {
             e.printStackTrace();
         }
     }
-    
+
     private static class ExitAction extends AbstractAction {
-    	public ExitAction() {
-    		super("Exit");
-    		putValue(MNEMONIC_KEY, KeyEvent.VK_X);
-    	}
-    	
-    	public void actionPerformed(ActionEvent e) {
-    		System.exit(0);
-    	}
+        public ExitAction() {
+            super("Exit");
+            putValue(MNEMONIC_KEY, KeyEvent.VK_X);
+        }
+
+        public void actionPerformed(ActionEvent e) {
+            System.exit(0);
+        }
     }
-    
+
 }

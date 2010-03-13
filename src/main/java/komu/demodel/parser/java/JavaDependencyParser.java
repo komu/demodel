@@ -6,17 +6,15 @@ package komu.demodel.parser.java;
 import static komu.demodel.parser.java.SignatureUtils.getTypesFromGenericMethodSignature;
 import static komu.demodel.parser.java.SignatureUtils.getTypesFromGenericSignature;
 
-import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Map;
 import java.util.TreeMap;
 
 import komu.demodel.domain.DependencyType;
+import komu.demodel.domain.InputSource;
 import komu.demodel.domain.Module;
-import komu.demodel.utils.ExtensionFileFilter;
-import komu.demodel.utils.FileSet;
+import komu.demodel.utils.Resource;
 
 import org.objectweb.asm.AnnotationVisitor;
 import org.objectweb.asm.Attribute;
@@ -36,14 +34,14 @@ public class JavaDependencyParser {
     private final FieldVisitor fieldVisitor = new MyFieldVisitor();
     private final AnnotationVisitor annotationVisitor = new MyAnnotationVisitor();
     private Module currentModule;
-
-    public void parseDirectory(File directory) throws IOException {
-        for (File file : new FileSet(directory, new ExtensionFileFilter("class")))
-            visitFile(file);
+    
+    public void parse(InputSource inputSource) throws IOException {
+    	for (Resource resource : inputSource.getResources())
+    		visitResource(resource);
     }
     
-    private void visitFile(File file) throws IOException {
-        InputStream in = new FileInputStream(file);
+    private void visitResource(Resource resource) throws IOException {
+        InputStream in = resource.open();
         try {
             ClassReader reader = new ClassReader(in);
             reader.accept(classVisitor, false);
