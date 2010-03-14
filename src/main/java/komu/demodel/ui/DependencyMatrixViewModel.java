@@ -127,14 +127,14 @@ final class DependencyMatrixViewModel {
     }
 
     public void openSelectedModule() {
-        if (selectedModule != null && openedModules.add(selectedModule)) {
+        if (selectedModule != null && !selectedModule.isLeaf() && openedModules.add(selectedModule)) {
             cachedVisibleModules = null;
             fireStateChanged();
         }
     }
 
     public void closeSelectedModule() {
-        if (selectedModule != null && openedModules.remove(selectedModule)) {
+        if (selectedModule != null && !selectedModule.isLeaf() && openedModules.remove(selectedModule)) {
             cachedVisibleModules = null;
             fireStateChanged();
         }
