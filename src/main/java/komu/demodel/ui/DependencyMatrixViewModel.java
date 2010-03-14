@@ -115,6 +115,7 @@ final class DependencyMatrixViewModel {
     public void sortModules() {
         if (selectedModule != null) {
             selectedModule.sortChildren();
+            flushCaches();
             fireStateChanged();
         }
     }
@@ -122,6 +123,7 @@ final class DependencyMatrixViewModel {
     public void moveSelectedModule(MoveDirection direction) {
         if (selectedModule != null) {
             selectedModule.move(direction);
+            flushCaches();
             fireStateChanged();
         }
     }
