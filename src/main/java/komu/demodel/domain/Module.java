@@ -3,7 +3,6 @@
  */
 package komu.demodel.domain;
 
-import static java.util.Collections.min;
 import static java.util.Collections.unmodifiableList;
 
 import java.util.ArrayList;
@@ -203,11 +202,17 @@ public final class Module {
     private static Module pickModuleWithLeastIncomingDependencies(List<Module> modules) {
         assert !modules.isEmpty();
 
-        List<ModuleWithWeight> weightedModules = new ArrayList<ModuleWithWeight>(modules.size());
-        for (Module module : modules) 
-            weightedModules.add(new ModuleWithWeight(module, module.incomingDependencies(modules)));
-    
-        return min(weightedModules).module;
+        Module minimumModule = modules.get(0);
+        int minimumDependencies = minimumModule.incomingDependencies(modules);
+        for (Module module : modules.subList(1, modules.size())) {
+            int dependencies = module.incomingDependencies(modules);
+            if (dependencies < minimumDependencies) {
+                minimumDependencies = dependencies;
+                minimumModule = module;
+            }
+        }
+        
+        return minimumModule;
     }
     
     private int incomingDependencies(Collection<Module> modules) {
@@ -215,20 +220,5 @@ public final class Module {
         for (Module m : modules)
             sum += m.getDependencyStrength(this);
         return sum;
-    }
-    
-    private static class ModuleWithWeight implements Comparable<ModuleWithWeight> {
-
-        final Module module;
-        final int weight;
-
-        public ModuleWithWeight(Module module, int weight) {
-            this.module = module;
-            this.weight = weight;
-        }
-        
-        public int compareTo(ModuleWithWeight o) {
-            return weight - o.weight;
-        }
     }
 }
