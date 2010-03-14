@@ -105,22 +105,28 @@ public final class Module {
     
     public int getDependencyStrength(Module module) {
         Integer cachedStrength = cachedDependencyStrengths.get(module);
-        if (cachedStrength == null) {
-            List<Module> myAncestors = getSelfAndAncestors();
-            if (myAncestors.contains(module)) return 0;
-            
-            List<Module> targetAncestors = module.getSelfAndAncestors();
-            if (targetAncestors.contains(this)) return 0;
-            
-            int strength = 0;
-            for (Module ancestor : myAncestors)
-                for (Module target : targetAncestors)
-                    strength += ancestor.getDirectDependencyStrength(target);
-            
-            cachedStrength = strength;
+        if (cachedStrength != null) {
+            return cachedStrength.intValue();
+        } else {
+            int strength = getUncachedDependencyStrength(module);
+            cachedDependencyStrengths.put(module, strength);
+            return strength;
         }
+    }
 
-        return cachedStrength.intValue();
+    private int getUncachedDependencyStrength(Module module) {
+        List<Module> myAncestors = getSelfAndAncestors();
+        if (myAncestors.contains(module)) return 0;
+            
+        List<Module> targetAncestors = module.getSelfAndAncestors();
+        if (targetAncestors.contains(this)) return 0;
+            
+        int strength = 0;
+        for (Module ancestor : myAncestors)
+            for (Module target : targetAncestors)
+                strength += ancestor.getDirectDependencyStrength(target);
+
+        return strength;
     }
     
     private List<Module> getSelfAndAncestors() {
