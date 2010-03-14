@@ -129,7 +129,7 @@ public final class Module {
         return strength;
     }
     
-    private List<Module> getSelfAndAncestors() {
+    public List<Module> getSelfAndAncestors() {
         if (cachedSelfAndAncestors == null) {
             List<Module> result = new ArrayList<Module>();
             result.add(this);
