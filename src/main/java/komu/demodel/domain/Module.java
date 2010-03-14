@@ -22,7 +22,7 @@ public final class Module {
     private final List<Module> children = new ArrayList<Module>();
     private final Map<Module,Integer> strengths = new HashMap<Module,Integer>();
 
-    private final Map<Module,Integer> dependencyStrengths = new HashMap<Module,Integer>();
+    private final Map<Module,Integer> cachedDependencyStrengths = new HashMap<Module,Integer>();
     private List<Module> cachedSelfAndAncestors = null;
     
     public Module(String name, Module parent) {
@@ -35,7 +35,7 @@ public final class Module {
     }
     
     public void flushCaches() {
-        dependencyStrengths.clear();
+        cachedDependencyStrengths.clear();
         cachedSelfAndAncestors = null;
         
         for (Module child : children)
@@ -104,7 +104,7 @@ public final class Module {
     }
     
     public int getDependencyStrength(Module module) {
-        Integer cachedStrength = dependencyStrengths.get(module);
+        Integer cachedStrength = cachedDependencyStrengths.get(module);
         if (cachedStrength == null) {
             List<Module> myAncestors = getSelfAndAncestors();
             if (myAncestors.contains(module)) return 0;
