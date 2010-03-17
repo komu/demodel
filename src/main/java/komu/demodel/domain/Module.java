@@ -3,6 +3,7 @@
  */
 package komu.demodel.domain;
 
+import static java.util.Collections.reverse;
 import static java.util.Collections.unmodifiableList;
 
 import java.util.ArrayList;
@@ -11,7 +12,6 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-
 
 public final class Module {
 
@@ -175,10 +175,12 @@ public final class Module {
         children.clear();
         
         while (!workList.isEmpty()) {
-            Module module = pickModuleWithLeastIncomingDependencies(workList);
+            Module module = pickModuleWithLeastOutgoingDependencies(workList);
             workList.remove(module);
             children.add(module);
         }
+        
+        reverse(children);
     }
     
     public void move(MoveDirection direction) {
@@ -199,13 +201,13 @@ public final class Module {
         return index >= 0 && index < children.size();
     }
 
-    private static Module pickModuleWithLeastIncomingDependencies(List<Module> modules) {
+    private static Module pickModuleWithLeastOutgoingDependencies(List<Module> modules) {
         assert !modules.isEmpty();
 
         Module minimumModule = modules.get(0);
-        int minimumDependencies = minimumModule.incomingDependencies(modules);
+        int minimumDependencies = minimumModule.outgoingDependencies(modules);
         for (Module module : modules.subList(1, modules.size())) {
-            int dependencies = module.incomingDependencies(modules);
+            int dependencies = module.outgoingDependencies(modules);
             if (dependencies < minimumDependencies) {
                 minimumDependencies = dependencies;
                 minimumModule = module;
@@ -215,10 +217,10 @@ public final class Module {
         return minimumModule;
     }
     
-    private int incomingDependencies(Collection<Module> modules) {
+    private int outgoingDependencies(Collection<Module> modules) {
         int sum = 0;
         for (Module m : modules)
-            sum += m.getDependencyStrength(this);
+            sum += getDependencyStrength(m);
         return sum;
     }
 }
