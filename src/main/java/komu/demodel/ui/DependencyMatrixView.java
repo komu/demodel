@@ -151,7 +151,7 @@ public class DependencyMatrixView extends JComponent {
         drawLeftModuleList(g, dx, dy, textdx, leftWidth);
         
         // Draw the modules on the top bar.
-        drawTopBar(g, dx, dy, cellHeight, cellWidth, textdx, leftWidth);
+        drawTopBar(g, dx, dy, cellHeight, cellWidth, leftWidth);
         
         // Draw both the horizontal and vertical lines of the grid.
         g.setColor(gridColor);
@@ -251,7 +251,7 @@ public class DependencyMatrixView extends JComponent {
         }
     }
 
-    private void drawTopBar(Graphics2D g, int dx, int dy, int cellHeight, int cellWidth, int textdx, int leftWidth) {
+    private void drawTopBar(Graphics2D g, int dx, int dy, int cellHeight, int cellWidth, int leftWidth) {
         int moduleCount = model.getVisibleModuleCount();
         FontMetrics hfm = g.getFontMetrics(headerFont);
 
@@ -260,7 +260,16 @@ public class DependencyMatrixView extends JComponent {
             int xx = dx + leftWidth + (mod * cellWidth);
             int yy = dy + cellHeight;
             
-            g.drawString(String.valueOf(mod + 1), xx + textdx, yy - hfm.getDescent());
+            String str = String.valueOf(mod+1);
+            int strWidth = hfm.stringWidth(str);
+            if (strWidth < cellWidth) {
+                int textdx = (cellWidth-strWidth)/2;
+                g.drawString(str, xx+textdx, yy - hfm.getDescent());
+
+            } else {
+                // TODO: draw some marker
+                g.drawString(str, xx, yy - hfm.getDescent());
+            }
         }
     }
 
