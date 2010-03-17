@@ -77,7 +77,7 @@ public class DependencyMatrixView extends JComponent {
         int leftWidth = calculateLeftHeaderWidth();
         int cellSize = getCellHeight();
         
-        int width = insets.left + insets.right 
+        int width = insets.left + insets.right
                   + leftWidth + (cellSize * model.getVisibleModuleCount());
         int height = insets.top + insets.bottom
                   + (cellSize * (1 + model.getVisibleModuleCount()));
@@ -233,7 +233,7 @@ public class DependencyMatrixView extends JComponent {
         for (Module module : model.getVisibleModules()) {
             String num = String.valueOf(moduleNumber);
             int numWidth = hfm.stringWidth(num);
-            int yy = headerYOffset + (moduleNumber * cellHeight); 
+            int yy = headerYOffset + (moduleNumber * cellHeight);
             
             int depthDx = module.getDepth() * DEPTH_DELTA;
             int xx = depthDx + dx + textdx;
@@ -275,9 +275,9 @@ public class DependencyMatrixView extends JComponent {
         int leftWidth = calculateLeftHeaderWidth();
         int ypos = y - dy - cellSize;
         if (x >= dx && x <= dx + leftWidth && ypos >= 0) {
-            int moduleIndex = ypos / cellSize; 
+            int moduleIndex = ypos / cellSize;
             if (moduleIndex < model.getVisibleModuleCount())
-                return model.getModuleAt(moduleIndex);                
+                return model.getModuleAt(moduleIndex);
         }
         
         return null;
@@ -300,27 +300,26 @@ public class DependencyMatrixView extends JComponent {
     }
 
     private void exportImage() {
-    	try {
-    		if (exportFileChooser.showSaveDialog(this) != JFileChooser.APPROVE_OPTION)
-    			return;
-    		
-    		BufferedImage image = new BufferedImage(getWidth(), getHeight(), BufferedImage.TYPE_INT_RGB);
-    		paintComponent(image.createGraphics());
-    	
-    		ImageIO.write(image, "PNG", exportFileChooser.getSelectedFile());
-    	} catch (IOException e) {
-    		e.printStackTrace();
-    	}
+        try {
+            if (exportFileChooser.showSaveDialog(this) != JFileChooser.APPROVE_OPTION) return;
+
+            BufferedImage image = new BufferedImage(getWidth(), getHeight(), BufferedImage.TYPE_INT_RGB);
+            paintComponent(image.createGraphics());
+
+            ImageIO.write(image, "PNG", exportFileChooser.getSelectedFile());
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
-    
-	private void updateCommandStates() {
-		sortModulesAction.setEnabled(model.hasSelection());
-		toggleAction.setEnabled(model.hasSelection());
-	}
+
+    private void updateCommandStates() {
+        sortModulesAction.setEnabled(model.hasSelection());
+        toggleAction.setEnabled(model.hasSelection());
+    }
 
     private class MyModelListener implements ChangeListener {
         public void stateChanged(ChangeEvent e) {
-        	updateCommandStates();
+            updateCommandStates();
             updateSize();
             repaint();
         }
@@ -334,64 +333,65 @@ public class DependencyMatrixView extends JComponent {
     }
 
     public final Action exportAction = new AbstractAction("Export") {
-		public void actionPerformed(ActionEvent e) {
-			exportImage();
-		}
+        public void actionPerformed(ActionEvent e) {
+            exportImage();
+        }
     };
-    
+
     public final Action sortModulesAction = new AbstractAction("Sort children") {
-    	{
-    		putValue(ACCELERATOR_KEY, KeyStroke.getKeyStroke(KeyEvent.VK_S, 0));
-    	}
-    	
-    	public void actionPerformed(ActionEvent e) {
-			model.sortModules();
-		}
+        {
+            putValue(ACCELERATOR_KEY, KeyStroke.getKeyStroke(KeyEvent.VK_S, 0));
+        }
+
+        public void actionPerformed(ActionEvent e) {
+            model.sortModules();
+        }
     };
-    
+
     public final Action toggleAction = new AbstractAction("Toggle") {
-    	{
-    		putValue(ACCELERATOR_KEY, KeyStroke.getKeyStroke(KeyEvent.VK_SPACE, 0)); 
-    	}
-    	
-		public void actionPerformed(ActionEvent e) {
+        {
+            putValue(ACCELERATOR_KEY, KeyStroke.getKeyStroke(KeyEvent.VK_SPACE, 0));
+        }
+
+        public void actionPerformed(ActionEvent e) {
             if (model.isOpened(model.getSelectedModule()))
                 model.closeSelectedModule();
             else
                 model.openSelectedModule();
-		}
+        }
     };
-    
+
     private class MoveSelectionAction extends AbstractAction {
-    	private final MoveDirection direction;
+        private final MoveDirection direction;
 
-		public MoveSelectionAction(MoveDirection direction) {
-			this.direction = direction;
-    	}
+        public MoveSelectionAction(MoveDirection direction) {
+            this.direction = direction;
+        }
 
-		public void actionPerformed(ActionEvent e) {
-	        model.moveSelection(direction);
-	        Module selected = model.getSelectedModule();
-	        if (selected != null) {
-	            int index = model.getVisibleModules().indexOf(selected);
-	            
-	            int cellHeight = getCellHeight();
-	            int yy = getHeaderYOffset() + (index * getCellHeight()); 
+        public void actionPerformed(ActionEvent e) {
+            model.moveSelection(direction);
+            Module selected = model.getSelectedModule();
+            if (selected != null) {
+                int index = model.getVisibleModules().indexOf(selected);
 
-	            scrollRectToVisible(new Rectangle(0, yy - cellHeight, 10, cellHeight * 3));
-	        }
-		}
+                int cellHeight = getCellHeight();
+                int yy = getHeaderYOffset() + (index * getCellHeight());
+
+                scrollRectToVisible(new Rectangle(0, yy - cellHeight, 10,
+                        cellHeight * 3));
+            }
+        }
     }
-    
+
     private class MoveSelectedModuleAction extends AbstractAction {
-    	private final MoveDirection direction;
+        private final MoveDirection direction;
 
-		public MoveSelectedModuleAction(MoveDirection direction) {
-			this.direction = direction;
-    	}
+        public MoveSelectedModuleAction(MoveDirection direction) {
+            this.direction = direction;
+        }
 
-		public void actionPerformed(ActionEvent e) {
-			model.moveSelectedModule(direction);
-		}
+        public void actionPerformed(ActionEvent e) {
+            model.moveSelectedModule(direction);
+        }
     }
 }
