@@ -152,8 +152,8 @@ public class DependencyMatrixView extends JComponent implements FontMetricsProvi
                 int index = model.getVisibleModules().indexOf(selected);
 
                 MatrixMetrics metrics = createMetrics();
+                int yy = metrics.getYOffsetOfModule(index);
                 int cellHeight = metrics.getCellHeight();
-                int yy = metrics.getHeaderYOffset() + (index * cellHeight);
 
                 scrollRectToVisible(new Rectangle(0, yy - cellHeight, 10, cellHeight * 3));
             }

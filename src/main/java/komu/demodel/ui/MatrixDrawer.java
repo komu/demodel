@@ -84,27 +84,21 @@ final class MatrixDrawer implements FontMetricsProvider {
     private void drawDependencyStrengths() {
         int cellHeight = metrics.getCellHeight();
         int cellWidth = metrics.getCellWidth();
-        int gridX = metrics.getLeftHeaderWidth();
-        int gridY = cellHeight;
+        int leftHeaderWidth = metrics.getLeftHeaderWidth();
 
         int moduleCount = model.getVisibleModuleCount();
-        
-        FontMetrics gfm = metrics.getGridFontMetrics();
         
         // Draw the dependency strengths
         g.setFont(metrics.getGridFont());
         g.setColor(textColor);
-        int gridFontHeight = gfm.getHeight();
         for (int row = 0; row < moduleCount; row++) {
             for (int col = 0; col < moduleCount; col++) {
                 int strength = model.dependencyStrength(col, row);
                 if (row != col && strength > 0) {
-                    String str = String.valueOf(strength);
-                    int sw = gfm.stringWidth(str);
+                    int x = leftHeaderWidth + col*cellWidth;
+                    int y = cellHeight + row*cellHeight;
                     
-                    int xx = gridX + (col * cellWidth) + ((cellWidth - sw) / 2);
-                    int yy = gridY + ((row + 1) * cellHeight) - ((cellHeight - gridFontHeight) / 2) - gfm.getDescent();
-                    g.drawString(str, xx + 1, yy);
+                    drawStringCentered(String.valueOf(strength), x, x+cellWidth, y, y+cellHeight);
                 }
             }
         }
@@ -140,11 +134,9 @@ final class MatrixDrawer implements FontMetricsProvider {
                 if (containsViolation(col, row)) {
                     int xx = leftWidth + ((col + 1) * cellWidth);
                     int yy = ((row + 1) * cellHeight) + 1;
-                    xs[0] = xx;
+                    xs[0] = xs[2] = xx;
                     xs[1] = xx - cellWidth/3;
-                    xs[2] = xx;
-                    ys[0] = yy;
-                    ys[1] = yy;
+                    ys[0] = ys[1] = yy;
                     ys[2] = yy + cellHeight/3;
                     
                     g.fillPolygon(xs, ys, 3);
@@ -154,7 +146,7 @@ final class MatrixDrawer implements FontMetricsProvider {
     }
 
     private void drawLeftModuleList() {
-        int leftWidth= metrics.getLeftHeaderWidth();
+        int leftWidth = metrics.getLeftHeaderWidth();
         int cellHeight = metrics.getCellHeight();
         int moduleCount = model.getVisibleModuleCount();
         int gridY = cellHeight;
@@ -211,25 +203,22 @@ final class MatrixDrawer implements FontMetricsProvider {
         g.setFont(metrics.getHeaderFont());
         g.setColor(textColor);
 
-        FontMetrics hfm = metrics.getHeaderFontMetrics();
-        int descent = hfm.getDescent();
-
         for (int moduleIndex = 0; moduleIndex < moduleCount; moduleIndex++) {
             int x = leftHeader + (moduleIndex * cellWidth);
-            
-            String str = String.valueOf(moduleIndex+1);
-            int strWidth = hfm.stringWidth(str);
-            if (strWidth < cellWidth) {
-                int textdx = (cellWidth-strWidth)/2;
-                g.drawString(str, x + textdx, cellHeight - descent);
 
-            } else {
-                // TODO: draw some marker
-                g.drawString(str, x, cellHeight - descent);
-            }
+            drawStringCentered(String.valueOf(moduleIndex+1), x, x + cellWidth, 0, cellHeight);
         }
     }
     
+    private void drawStringCentered(String str, int xLeft, int xRight, int yTop, int yBottom) {
+        FontMetrics fm = g.getFontMetrics();
+        int strWidth = fm.stringWidth(str);
+        int x = xLeft + (xRight-xLeft-strWidth)/2;
+        int y = yTop + (yBottom-yTop)/2 + fm.getDescent();
+        
+        g.drawString(str, x, y);
+    }
+
     private boolean containsViolation(int from, int to) {
         return from > to && model.dependencyStrength(from, to) > 0;
     }

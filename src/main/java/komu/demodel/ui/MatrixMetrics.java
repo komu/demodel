@@ -101,4 +101,8 @@ final class MatrixMetrics {
         
         return null;
     }
+
+    int getYOffsetOfModule(int index) {
+        return getHeaderYOffset() + (index * getCellHeight()); 
+    }
 }
