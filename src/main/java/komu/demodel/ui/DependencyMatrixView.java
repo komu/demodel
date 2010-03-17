@@ -3,8 +3,9 @@
  */
 package komu.demodel.ui;
 
+import static java.awt.RenderingHints.KEY_TEXT_ANTIALIASING;
+import static java.awt.RenderingHints.VALUE_TEXT_ANTIALIAS_ON;
 import static java.lang.Math.max;
-import static java.lang.Math.min;
 
 import java.awt.Color;
 import java.awt.Dimension;
@@ -12,16 +13,13 @@ import java.awt.Font;
 import java.awt.FontMetrics;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
-import java.awt.Insets;
 import java.awt.Rectangle;
-import java.awt.RenderingHints;
 import java.awt.event.ActionEvent;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
-import java.util.List;
 
 import javax.imageio.ImageIO;
 import javax.swing.AbstractAction;
@@ -35,20 +33,12 @@ import javax.swing.event.ChangeListener;
 import komu.demodel.domain.Module;
 import komu.demodel.domain.MoveDirection;
 
-public class DependencyMatrixView extends JComponent {
+public class DependencyMatrixView extends JComponent implements FontMetricsProvider {
 
     private static final long serialVersionUID = 1L;
     
     private final DependencyMatrixViewModel model;
-    private final Font headerFont = new Font("dialog", Font.PLAIN, 12);
-    private final Font gridFont = new Font("dialog", Font.PLAIN, 11);
-    private final Color headerBackground = new Color(200, 200, 255);
-    private final Color headerBackgroundSelected = new Color(200, 200, 255).brighter();
-    private final Color gridColor = new Color(100, 100, 140);
-    private final Color violationColor = Color.RED;
     private final JFileChooser exportFileChooser = new JFileChooser();
-    private static final int PLUS_WIDTH = 20;
-    private static final int DEPTH_DELTA = 10;
     
     public DependencyMatrixView(Module root) {
         if (root == null) throw new NullPointerException("null root");
@@ -73,17 +63,8 @@ public class DependencyMatrixView extends JComponent {
     }
 
     private void updateSize() {
-        Insets insets = getInsets();
-        int leftWidth = calculateLeftHeaderWidth();
-        int cellSize = getCellHeight();
-        
-        int width = insets.left + insets.right
-                  + leftWidth + (cellSize * model.getVisibleModuleCount());
-        int height = insets.top + insets.bottom
-                  + (cellSize * (1 + model.getVisibleModuleCount()));
+        Dimension preferredSize = new MatrixMetrics(model, this).getGridSize();
 
-        Dimension preferredSize = new Dimension(width, height);
-        
         setPreferredSize(preferredSize);
         setSize(preferredSize);
     }
@@ -92,222 +73,12 @@ public class DependencyMatrixView extends JComponent {
     protected void paintComponent(Graphics g) {
         Graphics2D g2 = (Graphics2D) g;
         
-        g2.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING,
-                            RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
-        
-        g2.setFont(headerFont);
-        
-        Insets insets = getInsets();
-        int x = insets.left;
-        int y = insets.top;
-        int width = getWidth() - insets.right - insets.left;
-        int height = getHeight() - insets.top - insets.bottom;
-        
+        g2.setRenderingHint(KEY_TEXT_ANTIALIASING, VALUE_TEXT_ANTIALIAS_ON);
+
         g2.setPaint(getBackground());
-        g2.fillRect(x, y, width, height);
-        
-        paintMatrix(g2);
-    }
+        g2.fillRect(0, 0, getWidth(), getHeight());
 
-    private void paintMatrix(Graphics2D g) {
-        Insets insets = getInsets();
-        int dx = insets.left;
-        int dy = insets.top;
-        List<Module> visibleModules = model.getVisibleModules();
-        int moduleCount = visibleModules.size();
-        
-        FontMetrics hfm = getFontMetrics(headerFont);
-        
-        int cellHeight = getCellHeight();
-        int cellWidth = cellHeight;
-        int textdx = (cellHeight - hfm.charWidth('0')) / 2;
-        
-        // Calculate the width for the module list on the left.
-        int leftWidth = calculateLeftHeaderWidth();
-
-        int gridX = dx + leftWidth;
-        int gridY = dy + cellHeight;
-        
-        // Now that we know the left width we can calculate the actual
-        // width of the whole grid. We also calculate the height here.
-        int width = min(leftWidth + (moduleCount * cellWidth),
-                        getWidth() - insets.right - insets.left);
-        int height = min((moduleCount + 1) * cellHeight,
-                         getHeight() - insets.top - insets.bottom);
-
-        // Paint background for module list
-        g.setColor(headerBackground);
-        g.fillRect(dx, gridY, leftWidth, moduleCount * cellHeight);
-        g.fillRect(dx + leftWidth, dy, width - leftWidth, cellHeight);
-        
-        // Draw the background for selected module, if there is one
-        if (model.getSelectedModule() != null) {
-            int selectedModuleIndex = visibleModules.indexOf(model.getSelectedModule());
-            g.setColor(headerBackgroundSelected);
-            g.fillRect(dx, gridY + selectedModuleIndex * cellHeight, leftWidth, cellHeight);
-        }
-        
-        // Draw the module list on left.
-        drawLeftModuleList(g, dx, dy, textdx, leftWidth);
-        
-        // Draw the modules on the top bar.
-        drawTopBar(g, dx, dy, cellHeight, cellWidth, leftWidth);
-        
-        // Draw both the horizontal and vertical lines of the grid.
-        g.setColor(gridColor);
-        g.drawLine(dx, dy + cellHeight, dx, dy + height);
-        g.drawLine(gridX, dy, dx + width, dy);
-
-        for (int mod = 0; mod <= moduleCount; mod++) {
-            int xx = dx + leftWidth + (mod * cellWidth);
-            int yy = dy + ((mod + 1) * cellHeight);
-            
-            g.drawLine(xx, dy, xx, dy + height);
-            g.drawLine(dx, yy, dx + width, yy);
-        }
-
-        FontMetrics gfm = g.getFontMetrics(gridFont);
-        
-        // Draw the dependency strengths
-        g.setFont(gridFont);
-        g.setColor(getForeground());
-        int gridFontHeight = gfm.getHeight();
-        for (int row = 0; row < moduleCount; row++) {
-            for (int col = 0; col < moduleCount; col++) {
-                int strength = model.dependencyStrength(col, row);
-                if (row != col && strength > 0) {
-                    String str = String.valueOf(strength);
-                    int sw = gfm.stringWidth(str);
-                    
-                    int xx = gridX + (col * cellWidth) + ((cellWidth - sw) / 2);
-                    int yy = gridY + ((row + 1) * cellHeight) - ((cellHeight - gridFontHeight) / 2) - gfm.getDescent();
-                    
-                    g.drawString(str, xx + 1, yy);
-                }
-            }
-        }
-
-        g.setColor(violationColor);
-        for (int row = 0; row < moduleCount; row++) {
-            for (int col = 0; col < moduleCount; col++) {
-                if (containsViolation(col, row)) {
-                    int xx = dx + leftWidth + ((col + 1) * cellWidth);
-                    int yy = dy + ((row + 1) * cellHeight) + 1;
-                    int[] xs = { xx, xx - (cellWidth / 3), xx };
-                    int[] ys = { yy, yy, yy + (cellHeight / 3)};
-                    
-                    g.fillPolygon(xs, ys, 3);
-                }
-            }
-        }
-        
-        // Paint the background of diagonal cells
-        g.setColor(headerBackground);
-        for (int mod = 0; mod < moduleCount; mod++) {
-            int xx = dx + leftWidth + (mod * cellWidth);
-            int yy = dy + ((mod + 1) * cellHeight);
-            
-            g.fillRect(xx + 1, yy + 1, cellWidth - 1, cellHeight - 1);
-        }
-    }
-    
-    private int getHeaderYOffset() {
-        Insets insets = getInsets();
-        int dy = insets.top;
-
-        int cellHeight = getCellHeight();
-        int gridY = dy + cellHeight;
-        FontMetrics hfm = getFontMetrics(headerFont);
-        
-        int headerFontHeight = hfm.getHeight();
-        return gridY - ((cellHeight - headerFontHeight) / 2) - hfm.getDescent();
-    }
-
-    private void drawLeftModuleList(Graphics2D g, int dx, int dy, int textdx, int leftWidth) {
-        int cellHeight = getCellHeight();
-        int headerYOffset = getHeaderYOffset();
-
-        FontMetrics hfm = g.getFontMetrics(headerFont);
-        
-        g.setColor(getForeground());
-        
-        int moduleNumber = 1;
-        for (Module module : model.getVisibleModules()) {
-            String num = String.valueOf(moduleNumber);
-            int numWidth = hfm.stringWidth(num);
-            int yy = headerYOffset + (moduleNumber * cellHeight);
-            
-            int depthDx = module.getDepth() * DEPTH_DELTA;
-            int xx = depthDx + dx + textdx;
-            if (model.isOpened(module))
-                g.drawString("-", xx, yy);
-            else if (!module.isLeaf())
-                g.drawString("+", xx, yy);
-            
-            g.drawString(module.getLocalName(), PLUS_WIDTH + xx, yy);
-            g.drawString(num, dx + leftWidth - numWidth - textdx, yy);
-            
-            moduleNumber++;
-        }
-    }
-
-    private void drawTopBar(Graphics2D g, int dx, int dy, int cellHeight, int cellWidth, int leftWidth) {
-        int moduleCount = model.getVisibleModuleCount();
-        FontMetrics hfm = g.getFontMetrics(headerFont);
-
-        g.setColor(getForeground());
-        for (int mod = 0; mod < moduleCount; mod++) {
-            int xx = dx + leftWidth + (mod * cellWidth);
-            int yy = dy + cellHeight;
-            
-            String str = String.valueOf(mod+1);
-            int strWidth = hfm.stringWidth(str);
-            if (strWidth < cellWidth) {
-                int textdx = (cellWidth-strWidth)/2;
-                g.drawString(str, xx+textdx, yy - hfm.getDescent());
-
-            } else {
-                // TODO: draw some marker
-                g.drawString(str, xx, yy - hfm.getDescent());
-            }
-        }
-    }
-
-    private int getCellHeight() {
-        return (4 * getFontMetrics(headerFont).getHeight()) / 3;
-    }
-    
-    private Module findModuleAt(int x, int y) {
-        Insets insets = getInsets();
-        int dx = insets.left;
-        int dy = insets.top;
-        int cellSize = getCellHeight();
-        
-        int leftWidth = calculateLeftHeaderWidth();
-        int ypos = y - dy - cellSize;
-        if (x >= dx && x <= dx + leftWidth && ypos >= 0) {
-            int moduleIndex = ypos / cellSize;
-            if (moduleIndex < model.getVisibleModuleCount())
-                return model.getModuleAt(moduleIndex);
-        }
-        
-        return null;
-    }
-
-    private int calculateLeftHeaderWidth() {
-        FontMetrics hfm = getFontMetrics(headerFont);
-        
-        int leftWidth = 20;
-        int extraWidth = 2 * hfm.stringWidth(" 999");
-        
-        for (Module module : model.getVisibleModules())
-            leftWidth = max(leftWidth, hfm.stringWidth(module.getLocalName()) + module.getDepth() * DEPTH_DELTA);
-        
-        return PLUS_WIDTH + leftWidth + extraWidth;
-    }
-    
-    private boolean containsViolation(int from, int to) {
-        return from > to && model.dependencyStrength(from, to) > 0;
+        new MatrixDrawer(model, g2).paintMatrix();
     }
 
     private void exportImage() {
@@ -340,7 +111,7 @@ public class DependencyMatrixView extends JComponent {
     private class MyMouseListener extends MouseAdapter {
         @Override
         public void mouseClicked(MouseEvent e) {
-            model.setSelectedModule(findModuleAt(e.getX(), e.getY()));
+            model.setSelectedModule(new MatrixMetrics(model, DependencyMatrixView.this).findModuleAt(e.getX(), e.getY()));
         }
     }
 
@@ -386,11 +157,11 @@ public class DependencyMatrixView extends JComponent {
             if (selected != null) {
                 int index = model.getVisibleModules().indexOf(selected);
 
-                int cellHeight = getCellHeight();
-                int yy = getHeaderYOffset() + (index * getCellHeight());
+                MatrixMetrics drawer = new MatrixMetrics(model, DependencyMatrixView.this);
+                int cellHeight = drawer.getCellHeight();
+                int yy = drawer.getHeaderYOffset() + (index * drawer.getCellHeight());
 
-                scrollRectToVisible(new Rectangle(0, yy - cellHeight, 10,
-                        cellHeight * 3));
+                scrollRectToVisible(new Rectangle(0, yy - cellHeight, 10, cellHeight * 3));
             }
         }
     }
@@ -406,4 +177,301 @@ public class DependencyMatrixView extends JComponent {
             model.moveSelectedModule(direction);
         }
     }
+
+}
+
+class MatrixMetrics {
+    private final DependencyMatrixViewModel model;
+    private final FontMetricsProvider fontMetricsProvider;
+    private int leftHeaderWidth = -1;
+    private Dimension gridSize;
+    private static final Font headerFont = new Font("dialog", Font.PLAIN, 12);
+    private static final Font gridFont = new Font("dialog", Font.PLAIN, 11);
+    private static final int DEPTH_DELTA = 10;
+    static final int PLUS_WIDTH = 20;
+
+    MatrixMetrics(DependencyMatrixViewModel model, FontMetricsProvider fontMetricsProvider) {
+        assert model != null;
+        assert fontMetricsProvider != null;
+        
+        this.model = model;
+        this.fontMetricsProvider = fontMetricsProvider;
+    }
+    
+    int getLeftHeaderWidth() {
+        if (leftHeaderWidth == -1) {
+            FontMetrics hfm = fontMetricsProvider.getFontMetrics(headerFont);
+            
+            int leftWidth = 20;
+            int extraWidth = 2 * hfm.stringWidth(" 999");
+            
+            for (Module module : model.getVisibleModules())
+                leftWidth = max(leftWidth, hfm.stringWidth(module.getLocalName()) + getModuleDepthDx(module));
+            leftHeaderWidth = PLUS_WIDTH + leftWidth + extraWidth;
+        }
+        return leftHeaderWidth;
+    }
+    
+    int getModuleDepthDx(Module module) {
+        return module.getDepth() * DEPTH_DELTA;
+    }
+    
+    Font getHeaderFont() {
+        return headerFont;
+    }
+    
+    Font getGridFont() {
+        return gridFont;
+    }
+    
+    Dimension getGridSize() {
+        if (gridSize == null) {
+            int moduleCount = model.getVisibleModuleCount();
+            
+            int gridWidth = leftHeaderWidth + moduleCount * getCellWidth();
+            int gridHeight = (moduleCount + 1) * getCellHeight();
+            
+            gridSize = new Dimension(gridWidth, gridHeight);
+        }
+        return gridSize;
+    }
+    
+    int getHeaderYOffset() {
+        FontMetrics hfm = fontMetricsProvider.getFontMetrics(headerFont);
+        int cellHeight = getCellHeight();
+        
+        return cellHeight - ((cellHeight - hfm.getHeight()) / 2) - hfm.getDescent();
+    }
+
+    int getCellHeight() {
+        return (4 * fontMetricsProvider.getFontMetrics(headerFont).getHeight()) / 3;
+    }
+    
+    int getCellWidth() {
+        return getCellHeight();
+    }
+    
+    Module findModuleAt(int x, int y) {
+        int cellSize = getCellHeight();
+        
+        int ypos = y - cellSize;
+        if (x >= 0 && x <= leftHeaderWidth && ypos >= 0) {
+            int moduleIndex = ypos / cellSize;
+            if (moduleIndex < model.getVisibleModuleCount())
+                return model.getModuleAt(moduleIndex);
+        }
+        
+        return null;
+    }
+}
+
+class MatrixDrawer implements FontMetricsProvider {
+    
+    private final DependencyMatrixViewModel model;
+    private final Graphics2D g;
+    private final MatrixMetrics metrics;
+    private static final Color textColor = Color.BLACK;
+    private static final Color headerBackground = new Color(200, 200, 255);
+    private static final Color headerBackgroundSelected = new Color(200, 200, 255).brighter();
+    private static final Color gridColor = new Color(100, 100, 140);
+    private static final Color violationColor = Color.RED;
+
+    MatrixDrawer(DependencyMatrixViewModel model, Graphics2D g) {
+        assert model != null;
+        assert g != null;
+        
+        this.model = model;
+        this.g = g;
+        this.metrics = new MatrixMetrics(model, this);
+    }
+    
+    @Override
+    public FontMetrics getFontMetrics(Font font) {
+        return g.getFontMetrics(font);
+    }
+   
+    void paintMatrix() {
+        drawLeftModuleList();
+        drawTopBar();
+        
+        drawGridLines();
+
+        drawDependencyStrengths();
+        drawViolations();
+        drawDiagonal();
+    }
+    
+    // Draw both the horizontal and vertical lines of the grid.
+    private void drawGridLines() {
+        int moduleCount = model.getVisibleModuleCount();
+        int leftWidth = metrics.getLeftHeaderWidth();
+        int cellHeight = metrics.getCellHeight();
+        int cellWidth = metrics.getCellWidth();
+        Dimension gridSize = metrics.getGridSize();
+        
+        g.setColor(gridColor);
+        g.drawLine(0, cellHeight, 0, gridSize.height);
+        g.drawLine(leftWidth, 0, gridSize.width, 0);
+
+        for (int mod = 0; mod <= moduleCount; mod++) {
+            int xx = leftWidth + (mod * cellWidth);
+            int yy = ((mod + 1) * cellHeight);
+            
+            g.drawLine(xx, 0, xx, gridSize.height);
+            g.drawLine(0, yy, gridSize.width, yy);
+        }
+    }
+
+    private void drawDependencyStrengths() {
+        int cellHeight = metrics.getCellHeight();
+        int cellWidth = metrics.getCellWidth();
+        int gridX = metrics.getLeftHeaderWidth();
+        int gridY = cellHeight;
+
+        int moduleCount = model.getVisibleModuleCount();
+        
+        FontMetrics gfm = g.getFontMetrics(metrics.getGridFont());
+        
+        // Draw the dependency strengths
+        g.setFont(metrics.getGridFont());
+        g.setColor(textColor);
+        int gridFontHeight = gfm.getHeight();
+        for (int row = 0; row < moduleCount; row++) {
+            for (int col = 0; col < moduleCount; col++) {
+                int strength = model.dependencyStrength(col, row);
+                if (row != col && strength > 0) {
+                    String str = String.valueOf(strength);
+                    int sw = gfm.stringWidth(str);
+                    
+                    int xx = gridX + (col * cellWidth) + ((cellWidth - sw) / 2);
+                    int yy = gridY + ((row + 1) * cellHeight) - ((cellHeight - gridFontHeight) / 2) - gfm.getDescent();
+                    g.drawString(str, xx + 1, yy);
+                    
+                }
+            }
+        }
+    }
+
+    private void drawDiagonal() {
+        int leftWidth = metrics.getLeftHeaderWidth();
+        int cellHeight = metrics.getCellHeight();
+        int cellWidth = metrics.getCellWidth();
+        int moduleCount = model.getVisibleModuleCount();
+
+        g.setColor(headerBackground);
+        for (int mod = 0; mod < moduleCount; mod++) {
+            int xx = leftWidth + (mod * cellWidth);
+            int yy = ((mod + 1) * cellHeight);
+            
+            g.fillRect(xx + 1, yy + 1, cellWidth - 1, cellHeight - 1);
+        }
+    }
+
+    private void drawViolations() {
+        int cellHeight = metrics.getCellHeight();
+        int cellWidth = metrics.getCellWidth();
+        int leftWidth = metrics.getLeftHeaderWidth();
+        int moduleCount = model.getVisibleModuleCount();
+        
+        int[] xs = new int[3];
+        int[] ys = new int[3];
+        
+        g.setColor(violationColor);
+        for (int row = 0; row < moduleCount; row++) {
+            for (int col = 0; col < moduleCount; col++) {
+                if (containsViolation(col, row)) {
+                    int xx = leftWidth + ((col + 1) * cellWidth);
+                    int yy = ((row + 1) * cellHeight) + 1;
+                    xs[0] = xx;
+                    xs[1] = xx - cellWidth/3;
+                    xs[2] = xx;
+                    ys[0] = yy;
+                    ys[1] = yy;
+                    ys[2] = yy + cellHeight/3;
+                    
+                    g.fillPolygon(xs, ys, 3);
+                }
+            }
+        }
+    }
+
+    private void drawLeftModuleList() {
+        int leftWidth= metrics.getLeftHeaderWidth();
+        int width = metrics.getGridSize().width;
+        int cellHeight = metrics.getCellHeight();
+        int moduleCount = model.getVisibleModuleCount();
+        int gridY = cellHeight;
+
+        // Paint background for module list
+        g.setColor(headerBackground);
+        g.fillRect(0, gridY, leftWidth, moduleCount * cellHeight);
+        g.fillRect(leftWidth, 0, width - leftWidth, cellHeight);
+
+        int headerYOffset = metrics.getHeaderYOffset();
+
+        FontMetrics hfm = g.getFontMetrics(metrics.getHeaderFont());
+        int textdx = (metrics.getCellWidth() - hfm.charWidth('0')) / 2;
+        
+        g.setFont(metrics.getHeaderFont());
+        
+        int moduleIndex = 0;
+        for (Module module : model.getVisibleModules()) {
+            if (module == model.getSelectedModule()) {
+                g.setColor(headerBackgroundSelected);
+                g.fillRect(0, gridY + moduleIndex * cellHeight, leftWidth, cellHeight);
+            }
+            
+            int moduleNumber = moduleIndex+1;
+            String num = String.valueOf(moduleNumber);
+            int numWidth = hfm.stringWidth(num);
+            int yy = headerYOffset + (moduleNumber * cellHeight);
+            
+            g.setColor(textColor);
+
+            int xx = metrics.getModuleDepthDx(module) + textdx;
+            if (model.isOpened(module))
+                g.drawString("-", xx, yy);
+            else if (!module.isLeaf())
+                g.drawString("+", xx, yy);
+
+            g.drawString(module.getLocalName(), MatrixMetrics.PLUS_WIDTH + xx, yy);
+            g.drawString(num, leftWidth - numWidth - textdx, yy);
+            
+            moduleIndex++;
+        }
+    }
+
+    private void drawTopBar() {
+        int cellHeight = metrics.getCellHeight();
+        int cellWidth = metrics.getCellWidth();
+
+        int moduleCount = model.getVisibleModuleCount();
+        FontMetrics hfm = g.getFontMetrics(metrics.getHeaderFont());
+
+        g.setFont(metrics.getHeaderFont());
+        g.setColor(textColor);
+        for (int mod = 0; mod < moduleCount; mod++) {
+            int xx = metrics.getLeftHeaderWidth() + (mod * cellWidth);
+            int yy = cellHeight;
+            
+            String str = String.valueOf(mod+1);
+            int strWidth = hfm.stringWidth(str);
+            if (strWidth < cellWidth) {
+                int textdx = (cellWidth-strWidth)/2;
+                g.drawString(str, xx+textdx, yy - hfm.getDescent());
+
+            } else {
+                // TODO: draw some marker
+                g.drawString(str, xx, yy - hfm.getDescent());
+            }
+        }
+    }
+    
+    private boolean containsViolation(int from, int to) {
+        return from > to && model.dependencyStrength(from, to) > 0;
+    }
+}
+
+interface FontMetricsProvider {
+    FontMetrics getFontMetrics(Font font);
 }
