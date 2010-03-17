@@ -63,7 +63,7 @@ public class DependencyMatrixView extends JComponent implements FontMetricsProvi
     }
 
     private void updateSize() {
-        Dimension preferredSize = new MatrixMetrics(model, this).getGridSize();
+        Dimension preferredSize = createMetrics().getGridSize();
 
         setPreferredSize(preferredSize);
         setSize(preferredSize);
@@ -74,6 +74,10 @@ public class DependencyMatrixView extends JComponent implements FontMetricsProvi
         Graphics2D g2 = (Graphics2D) g;
 
         new MatrixDrawer(model, g2).paintMatrix();
+    }
+    
+    private MatrixMetrics createMetrics() {
+        return new MatrixMetrics(model, this);
     }
 
     private void exportImage() {
@@ -108,8 +112,7 @@ public class DependencyMatrixView extends JComponent implements FontMetricsProvi
     private class MyMouseListener extends MouseAdapter {
         @Override
         public void mouseClicked(MouseEvent e) {
-            MatrixMetrics metrics = new MatrixMetrics(model, DependencyMatrixView.this);
-            model.setSelectedModule(metrics.findModuleAt(e.getX(), e.getY()));
+            model.setSelectedModule(createMetrics().findModuleAt(e.getX(), e.getY()));
         }
     }
 
@@ -155,9 +158,9 @@ public class DependencyMatrixView extends JComponent implements FontMetricsProvi
             if (selected != null) {
                 int index = model.getVisibleModules().indexOf(selected);
 
-                MatrixMetrics drawer = new MatrixMetrics(model, DependencyMatrixView.this);
-                int cellHeight = drawer.getCellHeight();
-                int yy = drawer.getHeaderYOffset() + (index * drawer.getCellHeight());
+                MatrixMetrics metrics = createMetrics();
+                int cellHeight = metrics.getCellHeight();
+                int yy = metrics.getHeaderYOffset() + (index * cellHeight);
 
                 scrollRectToVisible(new Rectangle(0, yy - cellHeight, 10, cellHeight * 3));
             }
