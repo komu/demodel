@@ -228,7 +228,7 @@ class MatrixMetrics {
         if (gridSize == null) {
             int moduleCount = model.getVisibleModuleCount();
             
-            int gridWidth = leftHeaderWidth + moduleCount * getCellWidth();
+            int gridWidth = getLeftHeaderWidth() + moduleCount * getCellWidth();
             int gridHeight = (moduleCount + 1) * getCellHeight();
             
             gridSize = new Dimension(gridWidth, gridHeight);
