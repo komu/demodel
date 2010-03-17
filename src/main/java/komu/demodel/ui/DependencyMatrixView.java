@@ -82,8 +82,10 @@ public class DependencyMatrixView extends JComponent {
         int height = insets.top + insets.bottom
                   + (cellSize * (1 + model.getVisibleModuleCount()));
 
-        setPreferredSize(new Dimension(width, height));
-        setSize(new Dimension(width, height));
+        Dimension preferredSize = new Dimension(width, height);
+        
+        setPreferredSize(preferredSize);
+        setSize(preferredSize);
     }
     
     @Override
@@ -303,7 +305,8 @@ public class DependencyMatrixView extends JComponent {
         try {
             if (exportFileChooser.showSaveDialog(this) != JFileChooser.APPROVE_OPTION) return;
 
-            BufferedImage image = new BufferedImage(getWidth(), getHeight(), BufferedImage.TYPE_INT_RGB);
+            Dimension size = getPreferredSize();
+            BufferedImage image = new BufferedImage(size.width, size.height, BufferedImage.TYPE_INT_RGB);
             paintComponent(image.createGraphics());
 
             ImageIO.write(image, "PNG", exportFileChooser.getSelectedFile());
