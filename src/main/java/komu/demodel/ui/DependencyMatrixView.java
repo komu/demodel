@@ -72,11 +72,6 @@ public class DependencyMatrixView extends JComponent implements FontMetricsProvi
     @Override
     protected void paintComponent(Graphics g) {
         Graphics2D g2 = (Graphics2D) g;
-        
-        g2.setRenderingHint(KEY_TEXT_ANTIALIASING, VALUE_TEXT_ANTIALIAS_ON);
-
-        g2.setPaint(getBackground());
-        g2.fillRect(0, 0, getWidth(), getHeight());
 
         new MatrixDrawer(model, g2).paintMatrix();
     }
@@ -87,7 +82,9 @@ public class DependencyMatrixView extends JComponent implements FontMetricsProvi
 
             Dimension size = getPreferredSize();
             BufferedImage image = new BufferedImage(size.width, size.height, BufferedImage.TYPE_INT_RGB);
-            paintComponent(image.createGraphics());
+            Graphics2D g = image.createGraphics();
+            g.setClip(0, 0, size.width, size.height);
+            new MatrixDrawer(model, g).paintMatrix();
 
             ImageIO.write(image, "PNG", exportFileChooser.getSelectedFile());
         } catch (IOException e) {
@@ -183,7 +180,7 @@ public class DependencyMatrixView extends JComponent implements FontMetricsProvi
 
 class MatrixMetrics {
     private final DependencyMatrixViewModel model;
-    private final FontMetricsProvider fontMetricsProvider;
+    private final FontMetrics headerFontMetrics;
     private int leftHeaderWidth = -1;
     private Dimension gridSize;
     private static final Font headerFont = new Font("dialog", Font.PLAIN, 12);
@@ -196,18 +193,16 @@ class MatrixMetrics {
         assert fontMetricsProvider != null;
         
         this.model = model;
-        this.fontMetricsProvider = fontMetricsProvider;
+        this.headerFontMetrics = fontMetricsProvider.getFontMetrics(headerFont);
     }
     
     int getLeftHeaderWidth() {
         if (leftHeaderWidth == -1) {
-            FontMetrics hfm = fontMetricsProvider.getFontMetrics(headerFont);
-            
             int leftWidth = 20;
-            int extraWidth = 2 * hfm.stringWidth(" 999");
+            int extraWidth = 2 * headerFontMetrics.stringWidth(" 999");
             
             for (Module module : model.getVisibleModules())
-                leftWidth = max(leftWidth, hfm.stringWidth(module.getLocalName()) + getModuleDepthDx(module));
+                leftWidth = max(leftWidth, headerFontMetrics.stringWidth(module.getLocalName()) + getModuleDepthDx(module));
             leftHeaderWidth = PLUS_WIDTH + leftWidth + extraWidth;
         }
         return leftHeaderWidth;
@@ -238,14 +233,13 @@ class MatrixMetrics {
     }
     
     int getHeaderYOffset() {
-        FontMetrics hfm = fontMetricsProvider.getFontMetrics(headerFont);
         int cellHeight = getCellHeight();
         
-        return cellHeight - ((cellHeight - hfm.getHeight()) / 2) - hfm.getDescent();
+        return cellHeight - ((cellHeight - headerFontMetrics.getHeight()) / 2) - headerFontMetrics.getDescent();
     }
 
     int getCellHeight() {
-        return (4 * fontMetricsProvider.getFontMetrics(headerFont).getHeight()) / 3;
+        return (4 * headerFontMetrics.getHeight()) / 3;
     }
     
     int getCellWidth() {
@@ -253,11 +247,11 @@ class MatrixMetrics {
     }
     
     Module findModuleAt(int x, int y) {
-        int cellSize = getCellHeight();
+        int cellHeight = getCellHeight();
         
-        int ypos = y - cellSize;
+        int ypos = y - cellHeight;
         if (x >= 0 && x <= getLeftHeaderWidth() && ypos >= 0) {
-            int moduleIndex = ypos / cellSize;
+            int moduleIndex = ypos / cellHeight;
             if (moduleIndex < model.getVisibleModuleCount())
                 return model.getModuleAt(moduleIndex);
         }
@@ -292,6 +286,11 @@ class MatrixDrawer implements FontMetricsProvider {
     }
    
     void paintMatrix() {
+        g.setRenderingHint(KEY_TEXT_ANTIALIASING, VALUE_TEXT_ANTIALIAS_ON);
+        
+        g.setPaint(Color.WHITE);
+        g.fill(g.getClipBounds());
+        
         drawLeftModuleList();
         drawTopBar();
         
