@@ -111,7 +111,8 @@ public class DependencyMatrixView extends JComponent implements FontMetricsProvi
     private class MyMouseListener extends MouseAdapter {
         @Override
         public void mouseClicked(MouseEvent e) {
-            model.setSelectedModule(new MatrixMetrics(model, DependencyMatrixView.this).findModuleAt(e.getX(), e.getY()));
+            MatrixMetrics metrics = new MatrixMetrics(model, DependencyMatrixView.this);
+            model.setSelectedModule(metrics.findModuleAt(e.getX(), e.getY()));
         }
     }
 
@@ -255,7 +256,7 @@ class MatrixMetrics {
         int cellSize = getCellHeight();
         
         int ypos = y - cellSize;
-        if (x >= 0 && x <= leftHeaderWidth && ypos >= 0) {
+        if (x >= 0 && x <= getLeftHeaderWidth() && ypos >= 0) {
             int moduleIndex = ypos / cellSize;
             if (moduleIndex < model.getVisibleModuleCount())
                 return model.getModuleAt(moduleIndex);
