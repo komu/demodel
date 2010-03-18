@@ -22,6 +22,7 @@ import komu.demodel.domain.JarFileInputSource;
 import komu.demodel.domain.Module;
 import komu.demodel.domain.Project;
 import komu.demodel.parser.java.JavaDependencyParser;
+import komu.demodel.ui.matrix.DependencyMatrixView;
 
 public class Main {
 

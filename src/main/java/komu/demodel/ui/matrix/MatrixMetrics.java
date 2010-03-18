@@ -1,7 +1,7 @@
 /*
  * Copyright (C) 2010 Juha Komulainen. All rights reserved.
  */
-package komu.demodel.ui;
+package komu.demodel.ui.matrix;
 
 import static java.lang.Math.max;
 
