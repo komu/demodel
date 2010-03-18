@@ -93,7 +93,10 @@ final class MatrixDrawer implements FontMetricsProvider {
         g.setFont(metrics.getGridFont());
         g.setColor(textColor);
         for (int row = 0; row < moduleCount; row++) {
+        	if (isOpened(row)) continue;
             for (int col = 0; col < moduleCount; col++) {
+            	if (isOpened(col)) continue;
+            	
                 int strength = model.dependencyStrength(col, row);
                 if (row != col && strength > 0) {
                     int x = leftHeaderWidth + col*cellWidth;
@@ -131,7 +134,10 @@ final class MatrixDrawer implements FontMetricsProvider {
         
         g.setColor(violationColor);
         for (int row = 0; row < moduleCount; row++) {
+        	if (isOpened(row)) continue;
             for (int col = 0; col < moduleCount; col++) {
+            	if (isOpened(col)) continue;
+            	
                 if (containsViolation(col, row)) {
                     int xx = leftWidth + ((col + 1) * cellWidth);
                     int yy = ((row + 1) * cellHeight) + 1;
@@ -144,6 +150,10 @@ final class MatrixDrawer implements FontMetricsProvider {
                 }
             }
         }
+    }
+    
+    private boolean isOpened(int module) {
+    	return model.isOpened(model.getModuleAt(module));
     }
 
     private void drawLeftModuleList() {
