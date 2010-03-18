@@ -16,6 +16,7 @@ import java.util.Map;
 public final class Module {
 
     private final String name;
+    private final boolean container;
     private final Module parent;
     private boolean programModule = false;
     private final List<Module> children = new ArrayList<Module>();
@@ -24,10 +25,11 @@ public final class Module {
     private final Map<Module,Integer> cachedDependencyStrengths = new HashMap<Module,Integer>();
     private List<Module> cachedSelfAndAncestors = null;
     
-    public Module(String name, Module parent) {
+    public Module(String name, boolean container, Module parent) {
         if (name ==  null) throw new NullPointerException("null name");
         
         this.name = name;
+        this.container = container;
         this.parent = parent;
         if (parent != null)
             parent.children.add(this);
@@ -40,7 +42,30 @@ public final class Module {
         for (Module child : children)
             child.flushCaches();
     }
-   
+    
+    /**
+     * Normalize tree that all nodes have only containers or non-containers. If a node has
+     * both, then a new container node is created for non-containers. 
+     */
+	public void normalizeTree() {
+		List<Module> containers = new ArrayList<Module>();
+		List<Module> nonContainers = new ArrayList<Module>();
+		
+		for (Module child : children) {
+			child.normalizeTree();
+			if (child.container)
+				containers.add(child);
+			else
+				nonContainers.add(child);
+		}
+		
+		if (!containers.isEmpty() && !nonContainers.isEmpty()) {
+			Module container = new Module("<classes>", true, this);
+			container.children.addAll(nonContainers);
+			children.removeAll(nonContainers);
+		}
+	}
+  
     public int getDepth() {
         return (parent != null) ? parent.getDepth() + 1 : 0;
     }

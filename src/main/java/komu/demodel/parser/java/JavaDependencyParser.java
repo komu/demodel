@@ -28,7 +28,7 @@ import org.objectweb.asm.Type;
 
 public class JavaDependencyParser {
 
-    private final Module rootModule = new Module("<root>", null);
+    private final Module rootModule = new Module("<root>", true, null);
     private final Map<String, Module> modules = new TreeMap<String, Module>();
     private final ClassVisitor classVisitor = new MyClassVisitor();
     private final MethodVisitor methodVisitor = new MyMethodVisitor();
@@ -59,6 +59,8 @@ public class JavaDependencyParser {
     
     public Module getRoot() {
         rootModule.filterNonProgramReferences();
+        rootModule.normalizeTree();
+        rootModule.flushCaches();
         return rootModule;
     }
 
@@ -69,13 +71,13 @@ public class JavaDependencyParser {
     }
     
     private Module getModuleForType(String className) {
-        return getModuleByName(moduleNameForType(className));
+        return getModuleByName(moduleNameForType(className), false);
     }
 
-    private Module getModuleByName(String name) {
+    private Module getModuleByName(String name, boolean container) {
         Module module = modules.get(name);
         if (module == null) {
-            module = new Module(name, getParentModule(name));
+            module = new Module(name, container, getParentModule(name));
             modules.put(name, module);
         }
         return module;
@@ -83,7 +85,7 @@ public class JavaDependencyParser {
 
     private Module getParentModule(String name) {
         int periodIndex = name.lastIndexOf('.');
-        return (periodIndex != -1) ? getModuleByName(name.substring(0, periodIndex)) : rootModule;
+        return (periodIndex != -1) ? getModuleByName(name.substring(0, periodIndex), true) : rootModule;
     }
     
     private static String moduleNameForType(String name) {
