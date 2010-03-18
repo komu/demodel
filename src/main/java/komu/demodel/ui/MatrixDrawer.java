@@ -11,6 +11,7 @@ import java.awt.Dimension;
 import java.awt.Font;
 import java.awt.FontMetrics;
 import java.awt.Graphics2D;
+import java.util.List;
 
 import komu.demodel.domain.Module;
 
@@ -148,12 +149,13 @@ final class MatrixDrawer implements FontMetricsProvider {
     private void drawLeftModuleList() {
         int leftWidth = metrics.getLeftHeaderWidth();
         int cellHeight = metrics.getCellHeight();
-        int moduleCount = model.getVisibleModuleCount();
         int gridY = cellHeight;
+        List<Module> visibleModules = model.getVisibleModules();
+        Module selected = model.getSelectedModule();
 
         // Paint background for module list
         g.setColor(headerBackground);
-        g.fillRect(0, gridY, leftWidth, moduleCount * cellHeight);
+        g.fillRect(0, gridY, leftWidth, visibleModules.size() * cellHeight);
 
         int headerYOffset = metrics.getHeaderYOffset();
 
@@ -163,9 +165,9 @@ final class MatrixDrawer implements FontMetricsProvider {
         g.setFont(metrics.getHeaderFont());
         
         int moduleIndex = 0;
-        for (Module module : model.getVisibleModules()) {
+        for (Module module : visibleModules) {
             // draw background of selected module differently
-            if (module == model.getSelectedModule()) {
+            if (module == selected) {
                 g.setColor(headerBackgroundSelected);
                 g.fillRect(0, gridY + moduleIndex * cellHeight, leftWidth, cellHeight);
             }
