@@ -51,10 +51,10 @@ final class MatrixDrawer implements FontMetricsProvider {
         
         drawGridLines();
         
+        drawDiagonal();
         drawSelectedCell();
         drawDependencyStrengths();
         drawViolations();
-        drawDiagonal();
     }
 
     private void drawBackground() {
