@@ -6,7 +6,6 @@ package komu.demodel.ui.matrix;
 import static java.util.Collections.singletonList;
 import static java.util.Collections.unmodifiableList;
 
-import java.awt.Dimension;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -30,8 +29,8 @@ final class DependencyMatrixViewModel {
     public static final int NO_SELECTION = -1;
     
     private final Module root;
-    private Module selectedModule;
-    private Dimension selectedCell = null;
+    private Module selectedRow;
+    private Module selectedColumn;
     private final IdentityHashSet<Module> openedModules = new IdentityHashSet<Module>();
     private final ChangeListenerList listeners = new ChangeListenerList();
     private List<Module> cachedVisibleModules;
@@ -40,7 +39,7 @@ final class DependencyMatrixViewModel {
         if (root == null) throw new NullPointerException("null root");
         
         this.root = root;
-        this.selectedModule = root;
+        this.selectedRow = root;
         openedModules.add(root);
     }
     
@@ -57,12 +56,12 @@ final class DependencyMatrixViewModel {
         listeners.stateChanged(new ChangeEvent(this));    
     }
 
-    public Module getSelectedModule() {
-        return selectedModule;
+    public Module getSelectedRow() {
+        return selectedRow;
     }
-    
-    public Dimension getSelectedCell() {
-        return selectedCell;
+
+    public Module getSelectedColumn() {
+        return selectedColumn;
     }
     
     public int getVisibleModuleCount() {
@@ -76,19 +75,17 @@ final class DependencyMatrixViewModel {
     }
     
     public String getDependencyDetailsOfSelectedCell() {
-        if (selectedCell==null) return null;
-        List<Module> modules = getVisibleModules();
-        int from = selectedCell.width;
-        int to = selectedCell.height;
+        if (selectedRow == null || selectedColumn == null) return null;
+
+        StringBuilder sb = new StringBuilder();
+        sb.append("Dependencies from module\n");
+        sb.append(selectedColumn.getName());
+        sb.append("\nto module\n    ");
+        sb.append(selectedRow.getName());
+        sb.append("\n\n");
         
-        Module fromModule = modules.get(from);
-        Module toModule = modules.get(to);
-        StringBuilder b = new StringBuilder(
-            "Dependencies from module \n    " + fromModule.getName() + 
-            "\nto module\n    " + toModule.getName() + "\n\n");
-        
-        listDependencies(fromModule, toModule, b);
-        return b.toString();
+        listDependencies(selectedColumn, selectedRow, sb);
+        return sb.toString();
     }
 
     private void listDependencies(Module fromModule, Module toModule, StringBuilder b) {
@@ -104,7 +101,7 @@ final class DependencyMatrixViewModel {
         }
         if (fromModule.getDependencies(toModule) != null) {
             for (Dependency d : fromModule.getDependencies(toModule)) {
-                b.append("Depencency from=" + fromModule.getName() + " " + d.toString() + "\n");     
+                b.append("Depencency from=").append(fromModule.getName()).append(" ").append(d).append("\n");     
             }
         }
     }
@@ -132,59 +129,59 @@ final class DependencyMatrixViewModel {
         return getVisibleModules().get(index);
     }
 
-    public void setSelectedModule(Module module) {
-        if (module != selectedModule) {
-            selectedModule = module;
+    public void setSelectedRow(Module module) {
+        if (module != selectedRow) {
+            selectedRow = module;
             fireStateChanged();
         }
     }
     
-    public void setSelectedCell(Dimension dimension) {
-        if (!dimension.equals(selectedCell)) {
-            selectedCell = dimension;
+    public void setSelectedColumn(Module module) {
+        if (module != selectedColumn) {
+            selectedColumn = module;
             fireStateChanged();
         }
     }
     
     public void moveSelection(MoveDirection direction) {
-        if (selectedModule == null) return;
+        if (selectedRow == null) return;
         
         List<Module> visibleModules = getVisibleModules();
-        int index = visibleModules.indexOf(selectedModule);
+        int index = visibleModules.indexOf(selectedRow);
         assert index != -1;
         
         int newIndex = index + direction.delta;
         if (newIndex >= 0 && newIndex < visibleModules.size()) {
-            selectedModule = visibleModules.get(newIndex);
+            selectedRow = visibleModules.get(newIndex);
             fireStateChanged();
         }
     }
 
     public void sortModules() {
-        if (selectedModule != null) {
-            selectedModule.sortChildren();
+        if (selectedRow != null) {
+            selectedRow.sortChildren();
             flushCaches();
             fireStateChanged();
         }
     }
 
     public void moveSelectedModule(MoveDirection direction) {
-        if (selectedModule != null) {
-            selectedModule.move(direction);
+        if (selectedRow != null) {
+            selectedRow.move(direction);
             flushCaches();
             fireStateChanged();
         }
     }
 
     public void openSelectedModule() {
-        if (selectedModule != null && !selectedModule.isLeaf() && openedModules.add(selectedModule)) {
+        if (selectedRow != null && !selectedRow.isLeaf() && openedModules.add(selectedRow)) {
             cachedVisibleModules = null;
             fireStateChanged();
         }
     }
 
     public void closeSelectedModule() {
-        if (selectedModule != null && !selectedModule.isLeaf() && openedModules.remove(selectedModule)) {
+        if (selectedRow != null && !selectedRow.isLeaf() && openedModules.remove(selectedRow)) {
             cachedVisibleModules = null;
             fireStateChanged();
         }
@@ -199,7 +196,7 @@ final class DependencyMatrixViewModel {
     }
     
     public boolean hasSelection() {
-        return selectedModule != null;
+        return selectedRow != null;
     }
     
 }
