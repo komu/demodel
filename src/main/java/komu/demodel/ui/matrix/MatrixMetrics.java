@@ -99,14 +99,14 @@ final class MatrixMetrics {
     
     Module findModuleByRow(int y) {
         int index = getMatrixYPos(y) / getCellHeight();
-        return (index < model.getVisibleModuleCount())
+        return (index >= 0 && index < model.getVisibleModuleCount())
             ? model.getModuleAt(index)
             : null;
     }
 
     Module findModuleByColumn(int x) {
         int index = getMatrixXPos(x) / getCellWidth();
-        return (index < model.getVisibleModuleCount())
+        return (index >= 0 && index < model.getVisibleModuleCount())
             ? model.getModuleAt(index)
             : null;
     }
