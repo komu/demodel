@@ -50,7 +50,8 @@ final class MatrixDrawer implements FontMetricsProvider {
         drawTopBar();
         
         drawGridLines();
-
+        
+        drawSelectedCell();
         drawDependencyStrengths();
         drawViolations();
         drawDiagonal();
@@ -98,13 +99,28 @@ final class MatrixDrawer implements FontMetricsProvider {
             	if (isOpened(col)) continue;
             	
                 int strength = model.dependencyStrength(col, row);
+
                 if (row != col && strength > 0) {
+                    
                     int x = leftHeaderWidth + col*cellWidth;
                     int y = cellHeight + row*cellHeight;
-                    
+
                     drawStringCentered(String.valueOf(strength), x, x+cellWidth, y, y+cellHeight);
                 }
             }
+        }
+    }
+
+    private void drawSelectedCell() {
+        Dimension selected = model.getSelectedCell();
+        if (selected != null) {
+            int cellHeight = metrics.getCellHeight();
+            int cellWidth = metrics.getCellWidth();
+            int leftHeaderWidth = metrics.getLeftHeaderWidth();
+            int x = leftHeaderWidth + selected.width*cellWidth;
+            int y = cellHeight + selected.height*cellHeight;
+            g.setColor(headerBackgroundSelected);
+            g.fillRect(x+1, y+1, cellWidth-1, cellHeight-1);
         }
     }
 

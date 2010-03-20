@@ -6,6 +6,7 @@ package komu.demodel.ui.matrix;
 import static java.util.Collections.singletonList;
 import static java.util.Collections.unmodifiableList;
 
+import java.awt.Dimension;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -29,6 +30,7 @@ final class DependencyMatrixViewModel {
     
     private final Module root;
     private Module selectedModule;
+    private Dimension selectedCell = null;
     private final IdentityHashSet<Module> openedModules = new IdentityHashSet<Module>();
     private final ChangeListenerList listeners = new ChangeListenerList();
     private List<Module> cachedVisibleModules;
@@ -56,6 +58,10 @@ final class DependencyMatrixViewModel {
 
     public Module getSelectedModule() {
         return selectedModule;
+    }
+    
+    public Dimension getSelectedCell() {
+        return selectedCell;
     }
     
     public int getVisibleModuleCount() {
@@ -94,6 +100,13 @@ final class DependencyMatrixViewModel {
     public void setSelectedModule(Module module) {
         if (module != selectedModule) {
             selectedModule = module;
+            fireStateChanged();
+        }
+    }
+    
+    public void setSelectedCell(Dimension dimension) {
+        if (!dimension.equals(selectedCell)) {
+            selectedCell = dimension;
             fireStateChanged();
         }
     }
@@ -153,4 +166,5 @@ final class DependencyMatrixViewModel {
     public boolean hasSelection() {
         return selectedModule != null;
     }
+    
 }
