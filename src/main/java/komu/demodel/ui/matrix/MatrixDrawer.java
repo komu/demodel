@@ -22,7 +22,7 @@ final class MatrixDrawer implements FontMetricsProvider {
     private final MatrixMetrics metrics;
     private static final Color textColor = Color.BLACK;
     private static final Color headerBackground = new Color(200, 200, 255);
-    private static final Color headerBackgroundSelected = new Color(200, 200, 255).brighter();
+    private static final Color headerBackgroundSelected = Color.YELLOW;
     private static final Color gridColor = new Color(100, 100, 140);
     private static final Color violationColor = Color.RED;
     private static final Color backgroundColor = Color.WHITE;
