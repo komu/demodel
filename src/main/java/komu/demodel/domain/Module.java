@@ -21,7 +21,8 @@ public final class Module {
     private boolean programModule = false;
     private final List<Module> children = new ArrayList<Module>();
     private final Map<Module,Integer> strengths = new HashMap<Module,Integer>();
-
+    private final Map<Module,List<Dependency>> dependencies = new HashMap<Module,List<Dependency>>();
+    
     private final Map<Module,Integer> cachedDependencyStrengths = new HashMap<Module,Integer>();
     private List<Module> cachedSelfAndAncestors = null;
     
@@ -182,12 +183,24 @@ public final class Module {
         strengths.put(module, strength);
     }
 
-    public void addDependency(Module module, DependencyType type) {
+    public void addDependency(Module module, DependencyType type) { 
         if (module == null) throw new NullPointerException("null module");
         if (type == null) throw new NullPointerException("null type");
         
         Integer strength = strengths.get(module);
         strengths.put(module, (strength != null) ? (strength + 1) : 1);
+        
+        // TODO: We get dependencies to void, java.lang.Class, java.lang.String as well, maybe we should get rid of them
+        List<Dependency> list = dependencies.get(module);
+        if (list == null) {
+            list = new ArrayList<Dependency>();
+            dependencies.put(module, list);
+        }
+        list.add(new Dependency(module, type));
+    }
+    
+    public List<Dependency> getDependencies(Module to) {
+        return dependencies.get(to);
     }
     
     @Override

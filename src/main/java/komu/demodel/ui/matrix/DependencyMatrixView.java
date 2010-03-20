@@ -19,6 +19,9 @@ import javax.swing.AbstractAction;
 import javax.swing.Action;
 import javax.swing.JComponent;
 import javax.swing.JFileChooser;
+import javax.swing.JFrame;
+import javax.swing.JScrollPane;
+import javax.swing.JTextArea;
 import javax.swing.KeyStroke;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
@@ -141,6 +144,28 @@ public class DependencyMatrixView extends JComponent implements FontMetricsProvi
                 model.closeSelectedModule();
             else
                 model.openSelectedModule();
+        }
+    };
+    
+    public final Action detailsAction = new AbstractAction("Details") {
+        {
+            putValue(ACCELERATOR_KEY, KeyStroke.getKeyStroke(KeyEvent.VK_D, 0));
+        }
+
+        public void actionPerformed(ActionEvent e) {
+            String text = model.getDependencyDetailsOfSelectedCell();
+            if (text==null) return;
+            JTextArea textArea = new JTextArea(); 
+            textArea.setText(text);
+            textArea.setEditable(false);
+            textArea.setRows(25);
+            textArea.setColumns(50); 
+            JFrame frame = new JFrame("Details");
+            frame.setDefaultCloseOperation(JFrame.HIDE_ON_CLOSE);
+            frame.add(new JScrollPane(textArea));
+            frame.setSize(700, 500);
+            frame.setLocationRelativeTo(null);
+            frame.setVisible(true);
         }
     };
 

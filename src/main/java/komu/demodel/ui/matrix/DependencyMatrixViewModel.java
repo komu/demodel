@@ -13,6 +13,7 @@ import java.util.List;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 
+import komu.demodel.domain.Dependency;
 import komu.demodel.domain.Module;
 import komu.demodel.domain.MoveDirection;
 import komu.demodel.utils.ChangeListenerList;
@@ -72,6 +73,40 @@ final class DependencyMatrixViewModel {
         List<Module> modules = getVisibleModules();
 
         return modules.get(from).getDependencyStrength(modules.get(to));
+    }
+    
+    public String getDependencyDetailsOfSelectedCell() {
+        if (selectedCell==null) return null;
+        List<Module> modules = getVisibleModules();
+        int from = selectedCell.width;
+        int to = selectedCell.height;
+        
+        Module fromModule = modules.get(from);
+        Module toModule = modules.get(to);
+        StringBuilder b = new StringBuilder(
+            "Dependencies from module \n    " + fromModule.getName() + 
+            "\nto module\n    " + toModule.getName() + "\n\n");
+        
+        listDependencies(fromModule, toModule, b);
+        return b.toString();
+    }
+
+    private void listDependencies(Module fromModule, Module toModule, StringBuilder b) {
+        if (!fromModule.isLeaf()) {
+            for (Module fromChild : fromModule.getChildren()) {
+                listDependencies(fromChild, toModule, b);
+            }
+        }
+        if (!toModule.isLeaf()) {
+            for (Module toChild : toModule.getChildren()) {
+                listDependencies(fromModule, toChild, b);
+            }
+        }
+        if (fromModule.getDependencies(toModule) != null) {
+            for (Dependency d : fromModule.getDependencies(toModule)) {
+                b.append("Depencency from=" + fromModule.getName() + " " + d.toString() + "\n");     
+            }
+        }
     }
 
     public List<Module> getVisibleModules() {

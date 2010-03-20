@@ -58,6 +58,7 @@ public class Main {
             modulesMenu.setMnemonic('M');
             modulesMenu.add(view.toggleAction);
             modulesMenu.add(view.sortModulesAction);
+            modulesMenu.add(view.detailsAction);
 
             JMenuBar menuBar = new JMenuBar();
             menuBar.add(fileMenu);
