@@ -109,12 +109,9 @@ public class DependencyMatrixView extends JComponent implements FontMetricsProvi
         @Override
         public void mouseClicked(MouseEvent e) {
             MatrixMetrics mm = createMetrics();
-            if (mm.clickedAtModule(e.getX(), e.getY())) {
-                model.setSelectedModule(mm.findModuleAt(e.getX(), e.getY()));
-            }
-            if (mm.clickedAtCell(e.getX(), e.getY())) {
-                model.setSelectedCell(mm.findCellAt(e.getX(), e.getY()));
-            }
+            
+            model.setSelectedRow(mm.findModuleByRow(e.getY()));
+            model.setSelectedColumn(mm.findModuleByColumn(e.getX()));
         }
     }
 
@@ -140,7 +137,7 @@ public class DependencyMatrixView extends JComponent implements FontMetricsProvi
         }
 
         public void actionPerformed(ActionEvent e) {
-            if (model.isOpened(model.getSelectedModule()))
+            if (model.isOpened(model.getSelectedRow()))
                 model.closeSelectedModule();
             else
                 model.openSelectedModule();
@@ -178,7 +175,7 @@ public class DependencyMatrixView extends JComponent implements FontMetricsProvi
 
         public void actionPerformed(ActionEvent e) {
             model.moveSelection(direction);
-            Module selected = model.getSelectedModule();
+            Module selected = model.getSelectedRow();
             if (selected != null) {
                 int index = model.getVisibleModules().indexOf(selected);
 

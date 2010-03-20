@@ -89,22 +89,6 @@ final class MatrixMetrics {
         return getCellHeight();
     }
     
-    boolean clickedAtModule(int x, int y) {
-        return (
-            x >= 0 && 
-            x <= getLeftHeaderWidth() &&
-            getMatrixYPos(y) >= 0 &&
-            y <= getGridSize().height);
-    }
-    
-    boolean clickedAtCell(int x, int y) {
-        return (
-            x > getLeftHeaderWidth() && 
-            x <= getGridSize().width &&
-            getMatrixYPos(y) >= 0 && 
-            y <= getGridSize().height);
-    }
-
     private int getMatrixYPos(int y) {
         return y - getCellHeight();
     }
@@ -113,18 +97,18 @@ final class MatrixMetrics {
         return x - getLeftHeaderWidth();
     }
     
-    Module findModuleAt(int x, int y) {
-        int ypos = getMatrixYPos(y);
-        int moduleIndex = ypos / getCellHeight();
-        if (moduleIndex < model.getVisibleModuleCount())
-            return model.getModuleAt(moduleIndex);
-        return null;
+    Module findModuleByRow(int y) {
+        int index = getMatrixYPos(y) / getCellHeight();
+        return (index < model.getVisibleModuleCount())
+            ? model.getModuleAt(index)
+            : null;
     }
-    
-    Dimension findCellAt(int x, int y) {
-        int ypos = getMatrixYPos(y);
-        int xpos = getMatrixXPos(x);
-        return new Dimension(xpos / getCellWidth(), ypos / getCellHeight());
+
+    Module findModuleByColumn(int x) {
+        int index = getMatrixXPos(x) / getCellWidth();
+        return (index < model.getVisibleModuleCount())
+            ? model.getModuleAt(index)
+            : null;
     }
 
     int getYOffsetOfModule(int index) {

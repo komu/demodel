@@ -112,13 +112,15 @@ final class MatrixDrawer implements FontMetricsProvider {
     }
 
     private void drawSelectedCell() {
-        Dimension selected = model.getSelectedCell();
-        if (selected != null) {
+        if (model.getSelectedColumn() != null && model.getSelectedRow() != null) {
+            int selectedColumn = model.getVisibleModules().indexOf(model.getSelectedColumn());
+            int selectedRow = model.getVisibleModules().indexOf(model.getSelectedRow());
+            
             int cellHeight = metrics.getCellHeight();
             int cellWidth = metrics.getCellWidth();
             int leftHeaderWidth = metrics.getLeftHeaderWidth();
-            int x = leftHeaderWidth + selected.width*cellWidth;
-            int y = cellHeight + selected.height*cellHeight;
+            int x = leftHeaderWidth + selectedColumn*cellWidth;
+            int y = cellHeight + selectedRow*cellHeight;
             g.setColor(headerBackgroundSelected);
             g.fillRect(x+1, y+1, cellWidth-1, cellHeight-1);
         }
@@ -177,7 +179,7 @@ final class MatrixDrawer implements FontMetricsProvider {
         int cellHeight = metrics.getCellHeight();
         int gridY = cellHeight;
         List<Module> visibleModules = model.getVisibleModules();
-        Module selected = model.getSelectedModule();
+        Module selected = model.getSelectedRow();
 
         // Paint background for module list
         g.setColor(headerBackground);
