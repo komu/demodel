@@ -16,7 +16,7 @@ import java.util.Map;
 public final class Module {
 
     private final String name;
-    private final boolean container;
+    private final ModuleType type;
     private final Module parent;
     private boolean programModule = false;
     private final List<Module> children = new ArrayList<Module>();
@@ -26,11 +26,12 @@ public final class Module {
     private final Map<Module,Integer> cachedDependencyStrengths = new HashMap<Module,Integer>();
     private List<Module> cachedSelfAndAncestors = null;
     
-    public Module(String name, boolean container, Module parent) {
+    public Module(String name, ModuleType type, Module parent) {
         if (name ==  null) throw new NullPointerException("null name");
+        if (type == null) throw new NullPointerException("null type");
         
         this.name = name;
-        this.container = container;
+        this.type = type;
         this.parent = parent;
         if (parent != null)
             parent.children.add(this);
@@ -45,25 +46,26 @@ public final class Module {
     }
     
     /**
-     * Normalize tree that all nodes have only containers or non-containers. If a node has
-     * both, then a new container node is created for non-containers. 
+     * Normalize tree so that all packages contain only packages or no packages
+     * at all. If a package has both, then a new pseudo-package is created under
+     * that package and all non-packages are moved under that.
      */
     public void normalizeTree() {
-        List<Module> containers = new ArrayList<Module>();
-        List<Module> nonContainers = new ArrayList<Module>();
+        List<Module> packages = new ArrayList<Module>();
+        List<Module> nonPackages = new ArrayList<Module>();
 
         for (Module child : children) {
             child.normalizeTree();
-            if (child.container)
-                containers.add(child);
+            if (child.type == ModuleType.PACKAGE)
+                packages.add(child);
             else
-                nonContainers.add(child);
+                nonPackages.add(child);
         }
 
-        if (!containers.isEmpty() && !nonContainers.isEmpty()) {
-            Module container = new Module("<classes>", true, this);
-            container.children.addAll(nonContainers);
-            children.removeAll(nonContainers);
+        if (!packages.isEmpty() && !nonPackages.isEmpty()) {
+            Module pseudoPackage = new Module("<classes>", ModuleType.PACKAGE, this);
+            pseudoPackage.children.addAll(nonPackages);
+            children.removeAll(nonPackages);
         }
     }
   

@@ -14,6 +14,7 @@ import java.util.TreeMap;
 import komu.demodel.domain.DependencyType;
 import komu.demodel.domain.InputSource;
 import komu.demodel.domain.Module;
+import komu.demodel.domain.ModuleType;
 import komu.demodel.utils.Resource;
 import komu.demodel.utils.ResourceProvider;
 
@@ -28,7 +29,7 @@ import org.objectweb.asm.Type;
 
 public class JavaDependencyParser {
 
-    private final Module rootModule = new Module("<root>", true, null);
+    private final Module rootModule = new Module("<root>", ModuleType.PACKAGE, null);
     private final Map<String, Module> modules = new TreeMap<String, Module>();
     private final ClassVisitor classVisitor = new MyClassVisitor();
     private final MethodVisitor methodVisitor = new MyMethodVisitor();
@@ -71,13 +72,13 @@ public class JavaDependencyParser {
     }
     
     private Module getModuleForType(String className) {
-        return getModuleByName(moduleNameForType(className), false);
+        return getModuleByName(moduleNameForType(className), ModuleType.TYPE);
     }
 
-    private Module getModuleByName(String name, boolean container) {
+    private Module getModuleByName(String name, ModuleType type) {
         Module module = modules.get(name);
         if (module == null) {
-            module = new Module(name, container, getParentModule(name));
+            module = new Module(name, type, getParentModule(name));
             modules.put(name, module);
         }
         return module;
@@ -85,7 +86,7 @@ public class JavaDependencyParser {
 
     private Module getParentModule(String name) {
         int periodIndex = name.lastIndexOf('.');
-        return (periodIndex != -1) ? getModuleByName(name.substring(0, periodIndex), true) : rootModule;
+        return (periodIndex != -1) ? getModuleByName(name.substring(0, periodIndex), ModuleType.PACKAGE) : rootModule;
     }
     
     private static String moduleNameForType(String name) {
