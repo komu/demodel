@@ -3,72 +3,45 @@
  */
 package komu.demodel.domain;
 
-import static java.util.Collections.reverse;
 import static java.util.Collections.unmodifiableList;
 
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
-public final class Module {
+public abstract class Module {
 
     private final String name;
-    private final ModuleType type;
-    private final Module parent;
-    private boolean programModule = false;
-    private final List<Module> children = new ArrayList<Module>();
+    private final PackageModule parent;
     private final Map<Module,Integer> strengths = new HashMap<Module,Integer>();
     private final Map<Module,List<Dependency>> dependencies = new HashMap<Module,List<Dependency>>();
     
     private final Map<Module,Integer> cachedDependencyStrengths = new HashMap<Module,Integer>();
     private List<Module> cachedSelfAndAncestors = null;
     
-    public Module(String name, ModuleType type, Module parent) {
+    public Module(String name, PackageModule parent) {
         if (name ==  null) throw new NullPointerException("null name");
-        if (type == null) throw new NullPointerException("null type");
         
         this.name = name;
-        this.type = type;
         this.parent = parent;
         if (parent != null)
-            parent.children.add(this);
+            parent.addChild(this);
     }
+    
+    public abstract ModuleType getType();
+    public abstract List<Module> getChildren();
+    public abstract void sortChildren();
     
     public void flushCaches() {
         cachedDependencyStrengths.clear();
         cachedSelfAndAncestors = null;
         
-        for (Module child : children)
+        for (Module child : getChildren())
             child.flushCaches();
     }
     
-    /**
-     * Normalize tree so that all packages contain only packages or no packages
-     * at all. If a package has both, then a new pseudo-package is created under
-     * that package and all non-packages are moved under that.
-     */
-    public void normalizeTree() {
-        List<Module> packages = new ArrayList<Module>();
-        List<Module> nonPackages = new ArrayList<Module>();
-
-        for (Module child : children) {
-            child.normalizeTree();
-            if (child.type == ModuleType.PACKAGE)
-                packages.add(child);
-            else
-                nonPackages.add(child);
-        }
-
-        if (!packages.isEmpty() && !nonPackages.isEmpty()) {
-            Module pseudoPackage = new Module("<classes>", ModuleType.PACKAGE, this);
-            pseudoPackage.children.addAll(nonPackages);
-            children.removeAll(nonPackages);
-        }
-    }
-  
     public int getDepth() {
         return (parent != null) ? parent.getDepth() + 1 : 0;
     }
@@ -89,46 +62,12 @@ public final class Module {
                 : name;
     }
     
-    public boolean isProgramModule() {
-        if (programModule) return true;
-        
-        for (Module child : children)
-            if (child.isProgramModule()) return true;
-        
-        return false;
-    }
+    public abstract boolean isProgramModule();
     
-    public void filterNonProgramReferences() {
-        for (Iterator<Module> it = children.iterator(); it.hasNext(); ) {
-            Module child = it.next();
-            if (child.isProgramModule())
-                child.filterNonProgramReferences();
-            else
-                it.remove();
-        }
-    }
+    public abstract void filterNonProgramReferences();
     
-    public void markAsProgramModule() {
-        programModule = true;
-    }
-    
-    public boolean isLeaf() {
-        return children.isEmpty();
-    }
-    
-    public int countLeafsUnder() {
-        if (isLeaf()) return 1;
-        
-        int count = 0;
-        for (Module child : children)
-            count += child.countLeafsUnder();
-        
-        return count;
-    }
-    
-    public List<Module> getChildren() {
-        return unmodifiableList(children);
-    }
+    public abstract boolean isLeaf();
+    public abstract int countLeafsUnder();
     
     public int getDependencyStrength(Module module) {
         Integer cachedStrength = cachedDependencyStrengths.get(module);
@@ -167,7 +106,7 @@ public final class Module {
     }
     
     private void addAncestors(List<Module> result) {
-        for (Module child : children) {
+        for (Module child : getChildren()) {
             result.add(child);
             child.addAncestors(result);
         }
@@ -210,54 +149,12 @@ public final class Module {
         return name;
     }
     
-    public void sortChildren() {
-        List<Module> workList = new ArrayList<Module>(children);
-        children.clear();
-        
-        while (!workList.isEmpty()) {
-            Module module = pickModuleWithLeastOutgoingDependencies(workList);
-            workList.remove(module);
-            children.add(module);
-        }
-        
-        reverse(children);
-    }
-    
     public void move(MoveDirection direction) {
         if (parent != null)
             parent.move(this, direction);
     }
     
-    private void move(Module module, MoveDirection direction) {
-        int index = children.indexOf(module);
-        int newIndex = index + direction.delta;
-        if (index != -1 && isValidChildIndex(newIndex)) {
-            children.remove(module);
-            children.add(newIndex, module);
-        }
-    }
-
-    private boolean isValidChildIndex(int index) {
-        return index >= 0 && index < children.size();
-    }
-
-    private static Module pickModuleWithLeastOutgoingDependencies(List<Module> modules) {
-        assert !modules.isEmpty();
-
-        Module minimumModule = modules.get(0);
-        int minimumDependencies = minimumModule.outgoingDependencies(modules);
-        for (Module module : modules.subList(1, modules.size())) {
-            int dependencies = module.outgoingDependencies(modules);
-            if (dependencies < minimumDependencies) {
-                minimumDependencies = dependencies;
-                minimumModule = module;
-            }
-        }
-        
-        return minimumModule;
-    }
-    
-    private int outgoingDependencies(Collection<Module> modules) {
+    int outgoingDependencies(Collection<Module> modules) {
         int sum = 0;
         for (Module m : modules)
             sum += getDependencyStrength(m);

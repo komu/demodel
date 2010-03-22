@@ -11,10 +11,12 @@ import java.io.InputStream;
 import java.util.Map;
 import java.util.TreeMap;
 
+import komu.demodel.domain.ClassModule;
 import komu.demodel.domain.DependencyType;
 import komu.demodel.domain.InputSource;
 import komu.demodel.domain.Module;
 import komu.demodel.domain.ModuleType;
+import komu.demodel.domain.PackageModule;
 import komu.demodel.utils.Resource;
 import komu.demodel.utils.ResourceProvider;
 
@@ -29,7 +31,7 @@ import org.objectweb.asm.Type;
 
 public class JavaDependencyParser {
 
-    private final Module rootModule = new Module("<root>", ModuleType.PACKAGE, null);
+    private final PackageModule rootModule = new PackageModule("<root>", null);
     private final Map<String, Module> modules = new TreeMap<String, Module>();
     private final ClassVisitor classVisitor = new MyClassVisitor();
     private final MethodVisitor methodVisitor = new MyMethodVisitor();
@@ -66,27 +68,35 @@ public class JavaDependencyParser {
     }
 
     private Module getVisitedModuleForType(String name) {
-        Module module = getModuleForType(name);
+        ClassModule module = getModuleForType(name);
         module.markAsProgramModule();
         return module;
     }
     
-    private Module getModuleForType(String className) {
-        return getModuleByName(moduleNameForType(className), ModuleType.TYPE);
+    private ClassModule getModuleForType(String className) {
+        return (ClassModule) getModuleByName(moduleNameForType(className), ModuleType.TYPE);
     }
 
+    private PackageModule getPackageModuleByName(String name) {
+        return (PackageModule) getModuleByName(name, ModuleType.PACKAGE);
+    }
+    
     private Module getModuleByName(String name, ModuleType type) {
         Module module = modules.get(name);
         if (module == null) {
-            module = new Module(name, type, getParentModule(name));
+            module = type.createModule(name, getParentModule(name));
             modules.put(name, module);
         }
         return module;
     }
 
-    private Module getParentModule(String name) {
+    private PackageModule getParentModule(String name) {
         int periodIndex = name.lastIndexOf('.');
-        return (periodIndex != -1) ? getModuleByName(name.substring(0, periodIndex), ModuleType.PACKAGE) : rootModule;
+        
+        if (periodIndex != -1)
+            return getPackageModuleByName(name.substring(0, periodIndex));
+        else
+            return rootModule;
     }
     
     private static String moduleNameForType(String name) {
