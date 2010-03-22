@@ -48,24 +48,24 @@ public final class Module {
      * Normalize tree that all nodes have only containers or non-containers. If a node has
      * both, then a new container node is created for non-containers. 
      */
-	public void normalizeTree() {
-		List<Module> containers = new ArrayList<Module>();
-		List<Module> nonContainers = new ArrayList<Module>();
-		
-		for (Module child : children) {
-			child.normalizeTree();
-			if (child.container)
-				containers.add(child);
-			else
-				nonContainers.add(child);
-		}
-		
-		if (!containers.isEmpty() && !nonContainers.isEmpty()) {
-			Module container = new Module("<classes>", true, this);
-			container.children.addAll(nonContainers);
-			children.removeAll(nonContainers);
-		}
-	}
+    public void normalizeTree() {
+        List<Module> containers = new ArrayList<Module>();
+        List<Module> nonContainers = new ArrayList<Module>();
+
+        for (Module child : children) {
+            child.normalizeTree();
+            if (child.container)
+                containers.add(child);
+            else
+                nonContainers.add(child);
+        }
+
+        if (!containers.isEmpty() && !nonContainers.isEmpty()) {
+            Module container = new Module("<classes>", true, this);
+            container.children.addAll(nonContainers);
+            children.removeAll(nonContainers);
+        }
+    }
   
     public int getDepth() {
         return (parent != null) ? parent.getDepth() + 1 : 0;
