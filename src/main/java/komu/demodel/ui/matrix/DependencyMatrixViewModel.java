@@ -53,7 +53,7 @@ final class DependencyMatrixViewModel {
     }
     
     private void fireStateChanged() {
-        listeners.stateChanged(new ChangeEvent(this));    
+        listeners.stateChanged(new ChangeEvent(this));
     }
 
     public Module getSelectedRow() {
@@ -101,7 +101,7 @@ final class DependencyMatrixViewModel {
         }
         if (fromModule.getDependencies(toModule) != null) {
             for (Dependency d : fromModule.getDependencies(toModule)) {
-                b.append("Depencency from=").append(fromModule.getName()).append(" ").append(d).append("\n");     
+                b.append("Depencency from=").append(fromModule.getName()).append(" ").append(d).append("\n");
             }
         }
     }
@@ -195,8 +195,12 @@ final class DependencyMatrixViewModel {
         return root.getSelfAndAncestors();
     }
     
-    public boolean hasSelection() {
+    public boolean hasSelectedRow() {
         return selectedRow != null;
+    }
+    
+    public boolean hasSelectedCell() {
+        return selectedRow != null && selectedColumn != null;
     }
     
 }
