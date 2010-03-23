@@ -28,9 +28,8 @@ import javax.swing.event.ChangeListener;
 
 import komu.demodel.domain.Module;
 import komu.demodel.domain.MoveDirection;
-import komu.demodel.domain.PackageMetrics;
-import komu.demodel.domain.PackageModule;
 import komu.demodel.ui.model.DependencyMatrixViewModel;
+import komu.demodel.utils.Check;
 
 public class DependencyMatrixView extends JComponent implements FontMetricsProvider {
 
@@ -39,10 +38,10 @@ public class DependencyMatrixView extends JComponent implements FontMetricsProvi
     private final DependencyMatrixViewModel model;
     private final JFileChooser exportFileChooser = new JFileChooser();
     
-    public DependencyMatrixView(Module root) {
-        if (root == null) throw new NullPointerException("null root");
-        
-        this.model = new DependencyMatrixViewModel(root);
+    public DependencyMatrixView(DependencyMatrixViewModel model) {
+        Check.notNull(model, "model");
+                
+        this.model = model;
         this.model.addListener(new MyModelListener());
         
         updateSize();
@@ -101,7 +100,6 @@ public class DependencyMatrixView extends JComponent implements FontMetricsProvi
         
         sortModulesAction.setEnabled(selectedRow);
         toggleAction.setEnabled(selectedRow);
-        packageMetricsAction.setEnabled(model.getSelectedRow() instanceof PackageModule);
         
         detailsAction.setEnabled(selectedCell);
     }
@@ -175,29 +173,6 @@ public class DependencyMatrixView extends JComponent implements FontMetricsProvi
         @Override
         public void actionPerformed(ActionEvent e) {
             showTextFrame("Details", model.getDependencyDetailsOfSelectedCell());
-        }
-    };
-    
-    public final Action packageMetricsAction = new AbstractAction("Package metrics") {
-        {
-            putValue(ACCELERATOR_KEY, KeyStroke.getKeyStroke(KeyEvent.VK_M, 0));
-        }
-        
-        @Override
-        public void actionPerformed(ActionEvent e) {
-            PackageModule module = (PackageModule) model.getSelectedRow();
-            PackageMetrics metrics = module.getMetrics();
-            
-            StringBuilder text = new StringBuilder();
-            text.append("Number of Types: ").append(metrics.getNumberOfTypes()).append("\n");
-            text.append("Number of Abstract Types: ").append(metrics.getNumberOfAbstractTypes()).append("\n");
-            text.append("Afferent Couplings: ").append(metrics.getAfferentCouplings()).append("\n");
-            text.append("Efferent Couplings: ").append(metrics.getEfferentCouplings()).append("\n");
-            text.append("Abstractness: ").append(metrics.getAbstractness()).append("\n");
-            text.append("Instability: ").append(metrics.getInstability()).append("\n");
-            text.append("Distance from the Main Sequence: ").append(metrics.getDistanceFromMainSequence()).append("\n");
-            
-            showTextFrame("Metrics for " + module.getName(), text.toString());
         }
     };
 
