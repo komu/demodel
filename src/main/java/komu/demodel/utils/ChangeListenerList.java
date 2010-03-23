@@ -10,7 +10,7 @@ public final class ChangeListenerList {
     private final CopyOnWriteArrayList<ChangeListener> listeners = new CopyOnWriteArrayList<ChangeListener>();
     
     public void add(ChangeListener listener) {
-        if (listener == null) throw new NullPointerException("null listener");
+        Check.notNull(listener, "listener");
         
         listeners.add(listener);
     }

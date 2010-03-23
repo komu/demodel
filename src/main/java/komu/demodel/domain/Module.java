@@ -11,6 +11,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import komu.demodel.utils.Check;
+
 public abstract class Module {
 
     private final String name;
@@ -22,7 +24,7 @@ public abstract class Module {
     private List<Module> cachedSelfAndAncestors = null;
     
     public Module(String name, PackageModule parent) {
-        if (name ==  null) throw new NullPointerException("null name");
+        Check.notNull(name, "name");
         
         this.name = name;
         this.parent = parent;
@@ -120,15 +122,15 @@ public abstract class Module {
     }
 
     public void setDependencyStrength(Module module, int strength) {
-        if (module == null) throw new NullPointerException("null module");
-        if (strength < 0) throw new IllegalArgumentException("negative strength: " + strength);
+        Check.notNull(module, "module");
+        Check.notNegative(strength, "strength");
         
         strengths.put(module, strength);
     }
 
     public void addDependency(Module module, DependencyType type) {
-        if (module == null) throw new NullPointerException("null module");
-        if (type == null) throw new NullPointerException("null type");
+        Check.notNull(module, "module");
+        Check.notNull(type, "type");
         
         Integer strength = strengths.get(module);
         strengths.put(module, (strength != null) ? (strength + 1) : 1);

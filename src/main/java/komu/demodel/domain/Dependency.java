@@ -1,14 +1,15 @@
 package komu.demodel.domain;
 
+import komu.demodel.utils.Check;
+
 public final class Dependency {
 
-    //TODO: it would be nice to store more info
     private final Module to;
     private final DependencyType type;
     
     public Dependency(Module to, DependencyType type) {
-        if (to == null) throw new NullPointerException("null to");
-        if (type == null) throw new NullPointerException("null type");
+        Check.notNull(to, "to");
+        Check.notNull(type, "type");
 
         this.to = to;
         this.type = type;
