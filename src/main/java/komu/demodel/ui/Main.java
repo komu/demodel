@@ -59,6 +59,8 @@ public class Main {
             modulesMenu.add(view.toggleAction);
             modulesMenu.add(view.sortModulesAction);
             modulesMenu.add(view.detailsAction);
+            modulesMenu.addSeparator();
+            modulesMenu.add(view.packageMetricsAction);
 
             JMenuBar menuBar = new JMenuBar();
             menuBar.add(fileMenu);

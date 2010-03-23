@@ -13,11 +13,86 @@ import java.util.List;
 public final class PackageModule extends Module {
 
     private final List<Module> children = new ArrayList<Module>();
+    private PackageMetrics metrics;
     
     public PackageModule(String name, PackageModule parent) {
         super(name, parent);
     }
     
+    public PackageMetrics getMetrics() {
+        if (metrics == null)
+            metrics = calculateMetrics();
+        return metrics;
+    }
+    
+    private PackageMetrics calculateMetrics() {
+        PackageMetrics metrics = new PackageMetrics();
+
+        metrics.setNumberOfTypes(countTypes());
+        metrics.setNumberOfAbstractTypes(countAbstractTypes());
+        metrics.setAfferentCouplings(countAfferentCouplings());
+        metrics.setEfferentCouplings(countEfferentCouplings());
+        
+        return metrics;
+    }
+    
+    private int countEfferentCouplings() {
+        int total = 0;
+        for (PackageModule module : getRoot().getPackagesUnder())
+            if (module != this && this.hasDependenciesToClassesIn(module))
+                total++;
+        return total;
+    }
+    
+    private boolean hasDependenciesToClassesIn(PackageModule module) {
+        for (ClassModule myClass : getClasses())
+            for (ClassModule theirClass : module.getClasses())
+                if (myClass.getDependencyStrength(theirClass) > 0)
+                    return true;
+        return false;
+    }
+    
+    private int countAfferentCouplings() {
+        int total = 0;
+        for (PackageModule module : getRoot().getPackagesUnder())
+            if (module != this && module.hasDependenciesToClassesIn(this))
+                total++;
+        return total;
+    }
+    
+    private List<PackageModule> getPackagesUnder() {
+        List<PackageModule> result = new ArrayList<PackageModule>();
+        for (Module module : getSelfAndAncestors())
+            if (module instanceof PackageModule)
+                result.add((PackageModule) module);
+        return result;
+    }
+
+    private List<ClassModule> getClasses() {
+        List<ClassModule> classes = new ArrayList<ClassModule>();
+        for (Module child : children)
+            if (child instanceof ClassModule)
+                classes.add((ClassModule) child);
+        return classes;
+    }
+
+    private int countTypes() {
+        return getClasses().size();
+    }
+    
+    private int countAbstractTypes() {
+        int total = 0;
+        for (ClassModule cm : getClasses())
+            if (cm.isAbstract())
+                total++;
+        return total;
+    }
+
+    @Override
+    PackageModule getRoot() {
+        return (parent == null) ? this : parent.getRoot();
+    }
+
     @Override
     public ModuleType getType() {
         return ModuleType.PACKAGE;

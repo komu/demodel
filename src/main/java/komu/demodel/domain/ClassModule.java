@@ -11,12 +11,25 @@ public final class ClassModule extends Module {
 
     private boolean programModule = false;
     
+    /** Detailed information about the type of this module, or null if we haven't visited it. */
+    private TypeType type;
+    
     public ClassModule(String name, PackageModule parent) {
         super(name, parent);
     }
    
-    public void markAsProgramModule() {
+    public void markAsProgramModule(TypeType type) {
         programModule = true;
+        this.type = type;
+    }
+    
+    @Override
+    PackageModule getRoot() {
+        return parent.getRoot();
+    }
+
+    public boolean isAbstract() {
+        return type != null && type.isAbstract();
     }
     
     @Override

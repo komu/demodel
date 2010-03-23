@@ -28,6 +28,8 @@ import javax.swing.event.ChangeListener;
 
 import komu.demodel.domain.Module;
 import komu.demodel.domain.MoveDirection;
+import komu.demodel.domain.PackageMetrics;
+import komu.demodel.domain.PackageModule;
 
 public class DependencyMatrixView extends JComponent implements FontMetricsProvider {
 
@@ -93,9 +95,28 @@ public class DependencyMatrixView extends JComponent implements FontMetricsProvi
     }
 
     private void updateCommandStates() {
-        sortModulesAction.setEnabled(model.hasSelectedRow());
-        toggleAction.setEnabled(model.hasSelectedRow());
-        detailsAction.setEnabled(model.hasSelectedCell());
+        boolean selectedRow = model.hasSelectedRow();
+        boolean selectedCell = model.hasSelectedCell();
+        
+        sortModulesAction.setEnabled(selectedRow);
+        toggleAction.setEnabled(selectedRow);
+        packageMetricsAction.setEnabled(model.getSelectedRow() instanceof PackageModule);
+        
+        detailsAction.setEnabled(selectedCell);
+    }
+    
+    private void showTextFrame(String title, String text) {
+        JTextArea textArea = new JTextArea();
+        textArea.setText(text);
+        textArea.setEditable(false);
+        textArea.setRows(25);
+        textArea.setColumns(50);
+        JFrame frame = new JFrame(title);
+        frame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+        frame.add(new JScrollPane(textArea));
+        frame.setSize(700, 500);
+        frame.setLocationRelativeTo(null);
+        frame.setVisible(true);
     }
 
     private class MyModelListener implements ChangeListener {
@@ -152,19 +173,30 @@ public class DependencyMatrixView extends JComponent implements FontMetricsProvi
 
         @Override
         public void actionPerformed(ActionEvent e) {
-            String text = model.getDependencyDetailsOfSelectedCell();
-            if (text==null) return;
-            JTextArea textArea = new JTextArea();
-            textArea.setText(text);
-            textArea.setEditable(false);
-            textArea.setRows(25);
-            textArea.setColumns(50);
-            JFrame frame = new JFrame("Details");
-            frame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
-            frame.add(new JScrollPane(textArea));
-            frame.setSize(700, 500);
-            frame.setLocationRelativeTo(null);
-            frame.setVisible(true);
+            showTextFrame("Details", model.getDependencyDetailsOfSelectedCell());
+        }
+    };
+    
+    public final Action packageMetricsAction = new AbstractAction("Package metrics") {
+        {
+            putValue(ACCELERATOR_KEY, KeyStroke.getKeyStroke(KeyEvent.VK_M, 0));
+        }
+        
+        @Override
+        public void actionPerformed(ActionEvent e) {
+            PackageModule module = (PackageModule) model.getSelectedRow();
+            PackageMetrics metrics = module.getMetrics();
+            
+            StringBuilder text = new StringBuilder();
+            text.append("Number of Types: ").append(metrics.getNumberOfTypes()).append("\n");
+            text.append("Number of Abstract Types: ").append(metrics.getNumberOfAbstractTypes()).append("\n");
+            text.append("Afferent Couplings: ").append(metrics.getAfferentCouplings()).append("\n");
+            text.append("Efferent Couplings: ").append(metrics.getEfferentCouplings()).append("\n");
+            text.append("Abstractness: ").append(metrics.getAbstractness()).append("\n");
+            text.append("Instability: ").append(metrics.getInstability()).append("\n");
+            text.append("Distance from the Main Sequence: ").append(metrics.getDistanceFromMainSequence()).append("\n");
+            
+            showTextFrame("Metrics for " + module.getName(), text.toString());
         }
     };
 
