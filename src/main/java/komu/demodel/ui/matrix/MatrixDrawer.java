@@ -232,11 +232,18 @@ final class MatrixDrawer implements FontMetricsProvider {
         g.fillRect(leftHeader, 0, metrics.getGridSize().width - leftHeader, cellHeight);
         
         g.setFont(metrics.getHeaderFont());
-        g.setColor(textColor);
+        
+        Module selected = model.getSelectedColumn();
 
         for (int moduleIndex = 0; moduleIndex < moduleCount; moduleIndex++) {
             int x = leftHeader + (moduleIndex * cellWidth);
-
+            
+            if (model.getModuleAt(moduleIndex) == selected) {
+                g.setColor(headerBackgroundSelected);
+                g.fillRect(x, 0, cellWidth, cellHeight);
+            }
+            
+            g.setColor(textColor);
             drawStringCentered(String.valueOf(moduleIndex+1), x, x + cellWidth, 0, cellHeight);
         }
     }
