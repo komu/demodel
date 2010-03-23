@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<project name="demodel" default="package">
+	
+  <property name="version" value="0.1-dev" />
+  <fileset id="jars" includes="libs/*.jar" />
+
+  <path id="classpath.main">
+  	<fileset dir="libs/main" includes="*.jar" />
+  </path>
+
+  <path id="classpath.test">
+    <pathelement location="target/classes"/>
+  	<fileset dir="libs/main" includes="*.jar" />
+    <fileset dir="libs/test" includes="*.jar" />
+  </path>
+	
+  <target name="compile">
+  	<mkdir dir="target/classes" />
+  	<javac
+  	  srcdir="src/main/java"
+  	  destdir="target/classes"
+  	  source="1.6"
+  	  target="1.6"
+  	  classpathref="classpath.main" />
+  </target>
+
+  <target name="compile-tests" depends="compile">
+    <mkdir dir="target/test-classes" />
+    <javac
+      srcdir="src/test/java"
+      destdir="target/test-classes"
+      source="1.6"
+      target="1.6"
+      classpathref="classpath.test" />
+  </target>
+
+  <target name="test" depends="compile-tests" description="Executes tests">
+  	<junit haltonerror="true" haltonfailure="true" printsummary="true">
+  	  <batchtest>
+  	    <fileset dir="target/test-classes" includes="**/*Test.class" />
+  	  </batchtest>
+      <classpath>
+      	<pathelement location="target/test-classes" />
+      	<path refid="classpath.test" />
+      </classpath>
+    </junit>
+  </target>
+  	
+  <target name="clean" description="Cleans everything built">
+  	<delete dir="target" />
+  </target>
+
+  <target name="package" depends="compile" description="Builds a package">
+    <jar destfile="target/${ant.project.name}-${version}.jar">
+      <manifest>
+        <attribute name="Main-Class" Value="komu.demodel.ui.Main" />
+      </manifest>
+      <fileset dir="target/classes" />
+      <zipgroupfileset dir="libs/main" includes="*.jar" />
+    </jar>
+  </target>
+</project>
