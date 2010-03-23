@@ -93,8 +93,9 @@ public class DependencyMatrixView extends JComponent implements FontMetricsProvi
     }
 
     private void updateCommandStates() {
-        sortModulesAction.setEnabled(model.hasSelection());
-        toggleAction.setEnabled(model.hasSelection());
+        sortModulesAction.setEnabled(model.hasSelectedRow());
+        toggleAction.setEnabled(model.hasSelectedRow());
+        detailsAction.setEnabled(model.hasSelectedCell());
     }
 
     private class MyModelListener implements ChangeListener {
@@ -152,11 +153,11 @@ public class DependencyMatrixView extends JComponent implements FontMetricsProvi
         public void actionPerformed(ActionEvent e) {
             String text = model.getDependencyDetailsOfSelectedCell();
             if (text==null) return;
-            JTextArea textArea = new JTextArea(); 
+            JTextArea textArea = new JTextArea();
             textArea.setText(text);
             textArea.setEditable(false);
             textArea.setRows(25);
-            textArea.setColumns(50); 
+            textArea.setColumns(50);
             JFrame frame = new JFrame("Details");
             frame.setDefaultCloseOperation(JFrame.HIDE_ON_CLOSE);
             frame.add(new JScrollPane(textArea));
