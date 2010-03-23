@@ -38,6 +38,8 @@ public final class ModuleDetailsView extends JPanel {
         DefaultFormBuilder builder = new DefaultFormBuilder(layout);
         builder.setDefaultDialogBorder();
         
+        builder.appendTitle("Package metrics");
+        builder.nextLine();
         builder.append("Number of Types:", numberOfTypes);
         builder.append("Number of Abstract Types:", numberOfAbstractTypes);
         builder.append("Afferent Couplings:", afferentCouplings);
