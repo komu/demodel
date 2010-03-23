@@ -15,6 +15,7 @@ import javax.swing.JMenu;
 import javax.swing.JMenuBar;
 import javax.swing.JScrollPane;
 import javax.swing.UIManager;
+import javax.swing.UnsupportedLookAndFeelException;
 import javax.swing.filechooser.FileFilter;
 
 import komu.demodel.domain.ClassDirectoryInputSource;
@@ -27,10 +28,10 @@ import komu.demodel.ui.matrix.DependencyMatrixView;
 import komu.demodel.ui.model.DependencyMatrixViewModel;
 
 public class Main {
-
+    
     public static void main(String[] args) {
         try {
-            UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
+            initializePlatformLookAndFeel();
 
             File file = (args.length == 0) ? chooseFileOrDirectory() : new File(args[0]);
             if (file == null) return;
@@ -54,8 +55,11 @@ public class Main {
             JMenu fileMenu = new JMenu("File");
             fileMenu.setMnemonic('F');
             fileMenu.add(view.exportAction);
-            fileMenu.addSeparator();
-            fileMenu.add(new ExitAction());
+            if (!isRunningOnMacOSX()) {
+                // On OS X, we already got Quit under application menu, no need to add other exit action
+                fileMenu.addSeparator();
+                fileMenu.add(new ExitAction());
+            }
 
             JMenu modulesMenu = new JMenu("Modules");
             modulesMenu.setMnemonic('M');
@@ -81,6 +85,21 @@ public class Main {
         }
     }
 
+    private static void initializePlatformLookAndFeel()
+            throws ClassNotFoundException, InstantiationException,
+            IllegalAccessException, UnsupportedLookAndFeelException {
+        if (isRunningOnMacOSX()) {
+            System.setProperty("apple.laf.useScreenMenuBar", "true");
+            System.setProperty("com.apple.mrj.application.apple.menu.about.name", "demodel");
+        }
+        
+        UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
+    }
+
+    private static boolean isRunningOnMacOSX() {
+        return System.getProperty("mrj.version") != null;
+    }
+    
     private static File chooseFileOrDirectory() {
         JFileChooser chooser = new JFileChooser();
         chooser.setDialogTitle("Select directory of class-files");
