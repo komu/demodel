@@ -10,6 +10,7 @@ import java.awt.Font;
 import java.awt.FontMetrics;
 
 import komu.demodel.domain.Module;
+import komu.demodel.ui.model.DependencyMatrixViewModel;
 
 final class MatrixMetrics {
     private final DependencyMatrixViewModel model;

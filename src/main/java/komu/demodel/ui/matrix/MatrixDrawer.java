@@ -14,6 +14,7 @@ import java.awt.Graphics2D;
 import java.util.List;
 
 import komu.demodel.domain.Module;
+import komu.demodel.ui.model.DependencyMatrixViewModel;
 
 final class MatrixDrawer implements FontMetricsProvider {
     

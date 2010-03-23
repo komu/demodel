@@ -30,6 +30,7 @@ import komu.demodel.domain.Module;
 import komu.demodel.domain.MoveDirection;
 import komu.demodel.domain.PackageMetrics;
 import komu.demodel.domain.PackageModule;
+import komu.demodel.ui.model.DependencyMatrixViewModel;
 
 public class DependencyMatrixView extends JComponent implements FontMetricsProvider {
 
