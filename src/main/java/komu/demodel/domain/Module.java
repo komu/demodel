@@ -14,7 +14,7 @@ import java.util.Map;
 public abstract class Module {
 
     private final String name;
-    private final PackageModule parent;
+    protected final PackageModule parent;
     private final Map<Module,Integer> strengths = new HashMap<Module,Integer>();
     private final Map<Module,List<Dependency>> dependencies = new HashMap<Module,List<Dependency>>();
     
@@ -33,6 +33,8 @@ public abstract class Module {
     public abstract ModuleType getType();
     public abstract List<Module> getChildren();
     public abstract void sortChildren();
+    
+    abstract PackageModule getRoot();
     
     public void flushCaches() {
         cachedDependencyStrengths.clear();
@@ -57,7 +59,7 @@ public abstract class Module {
     public String getLocalName() {
         if (parent == null) return name;
         
-        return name.startsWith(parent.getName() + ".") 
+        return name.startsWith(parent.getName() + ".")
                 ? name.substring(parent.getName().length() + 1)
                 : name;
     }
@@ -112,7 +114,7 @@ public abstract class Module {
         }
     }
 
-    private int getDirectDependencyStrength(Module module) {
+    int getDirectDependencyStrength(Module module) {
         Integer strength = strengths.get(module);
         return (strength != null) ? strength.intValue() : 0;
     }
@@ -124,7 +126,7 @@ public abstract class Module {
         strengths.put(module, strength);
     }
 
-    public void addDependency(Module module, DependencyType type) { 
+    public void addDependency(Module module, DependencyType type) {
         if (module == null) throw new NullPointerException("null module");
         if (type == null) throw new NullPointerException("null type");
         

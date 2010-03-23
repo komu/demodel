@@ -3,6 +3,7 @@
  */
 package komu.demodel.parser.java;
 
+import static komu.demodel.parser.java.AccessUtils.getTypeFromAccessFlags;
 import static komu.demodel.parser.java.SignatureUtils.getTypesFromGenericMethodSignature;
 import static komu.demodel.parser.java.SignatureUtils.getTypesFromGenericSignature;
 
@@ -17,6 +18,7 @@ import komu.demodel.domain.InputSource;
 import komu.demodel.domain.Module;
 import komu.demodel.domain.ModuleType;
 import komu.demodel.domain.PackageModule;
+import komu.demodel.domain.TypeType;
 import komu.demodel.utils.Resource;
 import komu.demodel.utils.ResourceProvider;
 
@@ -67,9 +69,9 @@ public class JavaDependencyParser {
         return rootModule;
     }
 
-    private Module getVisitedModuleForType(String name) {
+    private Module getVisitedModuleForType(String name, TypeType type) {
         ClassModule module = getModuleForType(name);
-        module.markAsProgramModule();
+        module.markAsProgramModule(type);
         return module;
     }
     
@@ -114,8 +116,9 @@ public class JavaDependencyParser {
     }
     
     private class MyClassVisitor implements ClassVisitor {
+        
         public void visit(int version, int access, String name, String signature, String superName, String[] interfaces) {
-            currentModule = getVisitedModuleForType(name);
+            currentModule = getVisitedModuleForType(name, getTypeFromAccessFlags(access));
             
             if (superName != null)
                 addDependencyToType(superName, DependencyType.INHERITANCE);
