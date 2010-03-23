@@ -1,7 +1,7 @@
 /*
  * Copyright (C) 2010 Juha Komulainen. All rights reserved.
  */
-package komu.demodel.ui.matrix;
+package komu.demodel.ui.model;
 
 import static java.util.Collections.singletonList;
 import static java.util.Collections.unmodifiableList;
@@ -24,7 +24,7 @@ import komu.demodel.utils.IdentityHashSet;
  * but which modules are currently expanded or selected are not.
  * Also does translation from the visible indices to underlying indices.
  */
-final class DependencyMatrixViewModel {
+public final class DependencyMatrixViewModel {
 
     public static final int NO_SELECTION = -1;
     
@@ -35,7 +35,7 @@ final class DependencyMatrixViewModel {
     private final ChangeListenerList listeners = new ChangeListenerList();
     private List<Module> cachedVisibleModules;
     
-    DependencyMatrixViewModel(Module root) {
+    public DependencyMatrixViewModel(Module root) {
         if (root == null) throw new NullPointerException("null root");
         
         this.root = root;
