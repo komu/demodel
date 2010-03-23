@@ -3,6 +3,8 @@
 <project name="demodel" default="package">
 	
   <property name="version" value="0.1-dev" />
+  <property name="targetjar" value="target/${ant.project.name}-${version}.jar" />
+	
   <fileset id="jars" includes="libs/*.jar" />
 
   <path id="classpath.main">
@@ -52,12 +54,22 @@
   </target>
 
   <target name="package" depends="compile" description="Builds a package">
-    <jar destfile="target/${ant.project.name}-${version}.jar">
+    <jar destfile="${targetjar}">
       <manifest>
         <attribute name="Main-Class" Value="komu.demodel.ui.Main" />
       </manifest>
       <fileset dir="target/classes" />
       <zipgroupfileset dir="libs/main" includes="*.jar" />
     </jar>
+  </target>
+	
+  <target name="package-osx" depends="package" description="Builds an OS X application bundle">
+    <mkdir dir="target/demodel.app/Contents" />
+  	<mkdir dir="target/demodel.app/Contents/Resources/Java" />
+  	<copy file="${targetjar}" todir="target/demodel.app/Contents/Resources/Java" />
+  	<copy todir="target/demodel.app/Contents">
+      <fileset dir="src/osx-bundle" />
+  	</copy>
+  	<chmod perm="755" file="target/demodel.app/Contents/MacOS/JavaApplicationStub" />
   </target>
 </project>
