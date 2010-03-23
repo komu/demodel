@@ -150,6 +150,7 @@ public class DependencyMatrixView extends JComponent implements FontMetricsProvi
             putValue(ACCELERATOR_KEY, KeyStroke.getKeyStroke(KeyEvent.VK_D, 0));
         }
 
+        @Override
         public void actionPerformed(ActionEvent e) {
             String text = model.getDependencyDetailsOfSelectedCell();
             if (text==null) return;
@@ -159,7 +160,7 @@ public class DependencyMatrixView extends JComponent implements FontMetricsProvi
             textArea.setRows(25);
             textArea.setColumns(50);
             JFrame frame = new JFrame("Details");
-            frame.setDefaultCloseOperation(JFrame.HIDE_ON_CLOSE);
+            frame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
             frame.add(new JScrollPane(textArea));
             frame.setSize(700, 500);
             frame.setLocationRelativeTo(null);
