@@ -13,7 +13,7 @@ public final class FileResource implements Resource {
     private final File file;
 
     public FileResource(File file) {
-        if (file == null) new NullPointerException("null file");
+        Check.notNull(file, "file");
 
         this.file = file;
     }

@@ -8,13 +8,15 @@ import static java.util.Collections.unmodifiableList;
 import java.util.ArrayList;
 import java.util.List;
 
+import komu.demodel.utils.Check;
+
 public final class Project {
 
     private final String name;
     private final List<InputSource> inputSources = new ArrayList<InputSource>();
 
     public Project(String name) {
-        if (name == null) throw new NullPointerException("null name");
+        Check.notNull(name, "name");
 
         this.name = name;
     }
@@ -24,7 +26,7 @@ public final class Project {
     }
 
     public void addInputSource(InputSource inputSource) {
-        if (inputSource == null) throw new NullPointerException("null inputSource");
+        Check.notNull(inputSource, "inputSource");
 
         inputSources.add(inputSource);
     }

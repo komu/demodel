@@ -13,6 +13,9 @@ public final class FileSet implements Iterable<File> {
     private final FileFilter filter;
     
     public FileSet(File rootDirectory, FileFilter filter) {
+        Check.notNull(rootDirectory, "rootDirectory");
+        Check.notNull(filter, "filter");
+        
         this.rootDirectory = rootDirectory;
         this.filter = filter;
     }

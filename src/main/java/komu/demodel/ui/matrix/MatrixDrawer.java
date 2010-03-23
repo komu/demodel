@@ -15,6 +15,7 @@ import java.util.List;
 
 import komu.demodel.domain.Module;
 import komu.demodel.ui.model.DependencyMatrixViewModel;
+import komu.demodel.utils.Check;
 
 final class MatrixDrawer implements FontMetricsProvider {
     
@@ -29,8 +30,8 @@ final class MatrixDrawer implements FontMetricsProvider {
     private static final Color backgroundColor = Color.WHITE;
 
     MatrixDrawer(DependencyMatrixViewModel model, Graphics2D g) {
-        assert model != null;
-        assert g != null;
+        Check.notNull(model, "model");
+        Check.notNull(g, "g");
         
         this.model = model;
         this.g = g;

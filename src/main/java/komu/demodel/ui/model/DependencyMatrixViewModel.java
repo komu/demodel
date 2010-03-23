@@ -16,6 +16,7 @@ import komu.demodel.domain.Dependency;
 import komu.demodel.domain.Module;
 import komu.demodel.domain.MoveDirection;
 import komu.demodel.utils.ChangeListenerList;
+import komu.demodel.utils.Check;
 import komu.demodel.utils.IdentityHashSet;
 
 /**
@@ -36,7 +37,7 @@ public final class DependencyMatrixViewModel {
     private List<Module> cachedVisibleModules;
     
     public DependencyMatrixViewModel(Module root) {
-        if (root == null) throw new NullPointerException("null root");
+        Check.notNull(root, "root");
         
         this.root = root;
         this.selectedRow = root;

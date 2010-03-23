@@ -13,6 +13,7 @@ import java.util.List;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 
+import komu.demodel.utils.Check;
 import komu.demodel.utils.Resource;
 import komu.demodel.utils.ResourceProvider;
 
@@ -21,7 +22,7 @@ public final class JarFileInputSource implements InputSource {
     private final File file;
     
     public JarFileInputSource(File file) {
-        if (file == null) throw new NullPointerException("null file");
+        Check.notNull(file, "file");
         
         this.file = file;
     }

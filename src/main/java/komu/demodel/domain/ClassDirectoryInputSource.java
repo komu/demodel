@@ -9,6 +9,7 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
+import komu.demodel.utils.Check;
 import komu.demodel.utils.ExtensionFileFilter;
 import komu.demodel.utils.FileResource;
 import komu.demodel.utils.FileSet;
@@ -20,7 +21,7 @@ public final class ClassDirectoryInputSource implements InputSource {
     private final File directory;
 
     public ClassDirectoryInputSource(File directory) {
-        if (directory == null) throw new IllegalArgumentException("null directory");
+        Check.notNull(directory, "directory");
 
         this.directory = directory;
     }

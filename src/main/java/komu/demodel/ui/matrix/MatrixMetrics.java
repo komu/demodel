@@ -11,6 +11,7 @@ import java.awt.FontMetrics;
 
 import komu.demodel.domain.Module;
 import komu.demodel.ui.model.DependencyMatrixViewModel;
+import komu.demodel.utils.Check;
 
 final class MatrixMetrics {
     private final DependencyMatrixViewModel model;
@@ -24,8 +25,8 @@ final class MatrixMetrics {
     static final int PLUS_WIDTH = 20;
 
     MatrixMetrics(DependencyMatrixViewModel model, FontMetricsProvider fontMetricsProvider) {
-        assert model != null;
-        assert fontMetricsProvider != null;
+        Check.notNull(model, "model");
+        Check.notNull(fontMetricsProvider, "fontMetricsProvider");
         
         this.model = model;
         this.headerFontMetrics = fontMetricsProvider.getFontMetrics(headerFont);
