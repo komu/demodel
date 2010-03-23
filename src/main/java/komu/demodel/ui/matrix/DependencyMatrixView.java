@@ -117,6 +117,13 @@ public class DependencyMatrixView extends JComponent implements FontMetricsProvi
         frame.setLocationRelativeTo(null);
         frame.setVisible(true);
     }
+    
+    private void toggleSelectedRow() {
+        if (model.isOpened(model.getSelectedRow()))
+            model.closeSelectedModule();
+        else
+            model.openSelectedModule();
+    }
 
     private class MyModelListener implements ChangeListener {
         public void stateChanged(ChangeEvent e) {
@@ -131,8 +138,16 @@ public class DependencyMatrixView extends JComponent implements FontMetricsProvi
         public void mouseClicked(MouseEvent e) {
             MatrixMetrics mm = createMetrics();
             
-            model.setSelectedRow(mm.findModuleByRow(e.getY()));
-            model.setSelectedColumn(mm.findModuleByColumn(e.getX()));
+            Module selectedRow = mm.findModuleByRow(e.getY());
+            Module selectedColumn = mm.findModuleByColumn(e.getX());
+            
+            if (e.getClickCount() == 1) {
+                model.setSelectedRow(selectedRow);
+                model.setSelectedColumn(selectedColumn);
+            } else if (e.getClickCount() == 2) {
+                if (selectedRow != null && selectedRow == model.getSelectedRow() && selectedColumn == null)
+                    toggleSelectedRow();
+            }
         }
     }
 
@@ -158,10 +173,7 @@ public class DependencyMatrixView extends JComponent implements FontMetricsProvi
         }
 
         public void actionPerformed(ActionEvent e) {
-            if (model.isOpened(model.getSelectedRow()))
-                model.closeSelectedModule();
-            else
-                model.openSelectedModule();
+            toggleSelectedRow();
         }
     };
     
