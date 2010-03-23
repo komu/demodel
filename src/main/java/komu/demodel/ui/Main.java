@@ -3,6 +3,7 @@
  */
 package komu.demodel.ui;
 
+import java.awt.BorderLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.KeyEvent;
 import java.io.File;
@@ -23,6 +24,7 @@ import komu.demodel.domain.Module;
 import komu.demodel.domain.Project;
 import komu.demodel.parser.java.JavaDependencyParser;
 import komu.demodel.ui.matrix.DependencyMatrixView;
+import komu.demodel.ui.model.DependencyMatrixViewModel;
 
 public class Main {
 
@@ -46,7 +48,8 @@ public class Main {
 
             Module root = parser.getRoot();
 
-            DependencyMatrixView view = new DependencyMatrixView(root);
+            DependencyMatrixViewModel model = new DependencyMatrixViewModel(root);
+            DependencyMatrixView view = new DependencyMatrixView(model);
 
             JMenu fileMenu = new JMenu("File");
             fileMenu.setMnemonic('F');
@@ -59,8 +62,6 @@ public class Main {
             modulesMenu.add(view.toggleAction);
             modulesMenu.add(view.sortModulesAction);
             modulesMenu.add(view.detailsAction);
-            modulesMenu.addSeparator();
-            modulesMenu.add(view.packageMetricsAction);
 
             JMenuBar menuBar = new JMenuBar();
             menuBar.add(fileMenu);
@@ -69,7 +70,8 @@ public class Main {
             JFrame frame = new JFrame("demodel");
             frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
             frame.setJMenuBar(menuBar);
-            frame.add(new JScrollPane(view));
+            frame.add(new JScrollPane(view), BorderLayout.CENTER);
+            frame.add(new ModuleDetailsView(model), BorderLayout.EAST);
             frame.setSize(800, 600);
             frame.setLocationRelativeTo(null);
             frame.setVisible(true);
