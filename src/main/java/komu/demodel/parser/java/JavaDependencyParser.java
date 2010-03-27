@@ -80,7 +80,11 @@ public class JavaDependencyParser {
     }
 
     private PackageModule getPackageModuleByName(String name) {
-        return (PackageModule) getModuleByName(name, ModuleType.PACKAGE);
+        Module module = getModuleByName(name, ModuleType.PACKAGE);
+        if (module instanceof PackageModule)
+          return (PackageModule) module;
+        else
+          throw new IllegalStateException("module: " + name + "is not a package");
     }
     
     private Module getModuleByName(String name, ModuleType type) {
