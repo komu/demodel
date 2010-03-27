@@ -6,15 +6,13 @@ package komu.demodel.ui
 import scala.collection.JavaConversions._
 
 import java.io.File
-
 import java.awt.BorderLayout
 import java.awt.event.{ ActionEvent, KeyEvent }
-
 import javax.swing.{ Action, AbstractAction, JFileChooser, JFrame, JMenu, 
   JMenuBar, JScrollPane, UIManager }
 import javax.swing.filechooser.FileFilter
 
-import komu.demodel.domain.{ ClassDirectoryInputSource, JarFileInputSource, Project }
+import komu.demodel.domain.project.{ ClassDirectoryInputSource, JarFileInputSource, Project }
 import komu.demodel.parser.java.JavaDependencyParser
 import komu.demodel.ui.matrix.DependencyMatrixView
 import komu.demodel.ui.model.DependencyMatrixViewModel
@@ -41,12 +39,7 @@ object Main {
     else
       project.addInputSource(new JarFileInputSource(file))
 
-    val parser = new JavaDependencyParser
-            
-    for (source <- project.getInputSources)
-      parser.parse(source)
-
-    val root = parser.rootModule
+    val root = JavaDependencyParser.parse(project.inputSources)
 
     val model = new DependencyMatrixViewModel(root)
     val view = new DependencyMatrixView(model)
