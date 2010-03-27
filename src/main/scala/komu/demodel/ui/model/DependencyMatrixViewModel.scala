@@ -3,10 +3,7 @@
  */
 package komu.demodel.ui.model
 
-import scala.collection.JavaConversions._
-
-import java.util.Collections.{ singletonList, unmodifiableList }
-import java.util.{ ArrayList, List }
+import collection.mutable.ArrayBuffer
 
 import javax.swing.event.{ ChangeEvent, ChangeListener }
 
@@ -30,7 +27,7 @@ final class DependencyMatrixViewModel(root: Module) {
   private val NO_SELECTION = -1
     
   private val listeners = new ChangeListenerList
-  private var cachedVisibleModules: List[Module] = null
+  private var cachedVisibleModules: ArrayBuffer[Module] = null
     
   def flushCaches() {
     cachedVisibleModules = null
@@ -65,7 +62,7 @@ final class DependencyMatrixViewModel(root: Module) {
 
   def dependencyStrength(from: Int, to: Int) = {
     var modules = visibleModules
-    modules.get(from).getDependencyStrength(modules.get(to))
+    modules(from).getDependencyStrength(modules(to))
   }
     
   def dependencyDetailsOfSelectedCell: String = {
@@ -95,61 +92,58 @@ final class DependencyMatrixViewModel(root: Module) {
         sb.append("Depencency from=").append(fromModule.name).append(" ").append(d).append("\n")
   }
 
-  def visibleModules = {
+  def visibleModules: IndexedSeq[Module] = {
     if (cachedVisibleModules == null) {
-      val modules = new ArrayList[Module]
-      addVisibleModules(modules, singletonList(root))
-      cachedVisibleModules = unmodifiableList(modules)
+      val modules = new ArrayBuffer[Module]
+      addVisibleModules(modules, List(root))
+      cachedVisibleModules = modules
     }
     cachedVisibleModules
   }
 
-  private def addVisibleModules(result: ArrayList[Module], modules: Iterable[Module]) {
-    for (module <- modules) {
-      result.add(module)
-      if (openedModules.contains(module))
-        addVisibleModules(result, module.children)
-    }
+  private def addVisibleModules(result: ArrayBuffer[Module], modules: Iterable[Module]) {
+    result ++= modules
+    for (module <- modules if openedModules.contains(module))
+      addVisibleModules(result, module.children)
   }
 
-  def getModuleAt(index: Int) = visibleModules.get(index)
+  def getModuleAt(index: Int) = visibleModules(index)
 
   def moveSelection(direction: MoveDirection) {
     if (selectedRow.isEmpty) return
         
-    var modules = visibleModules
     var index = visibleModules.indexOf(selectedRow.get)
     assert(index != -1)
         
     val newIndex = index + direction.delta
     if (newIndex >= 0 && newIndex < visibleModules.size) {
-      selectedRow = Some(visibleModules.get(newIndex))
+      selectedRow = Some(visibleModules(newIndex))
       fireStateChanged()
     }
   }
 
   def sortModules() =
-    if (selectedRow.isDefined) {
-      selectedRow.get.sortChildren()
+    for (row <- selectedRow) {
+      row.sortChildren()
       flushCaches()
       fireStateChanged()
     }
 
   def moveSelectedModule(direction: MoveDirection) =
-    if (selectedRow.isDefined) {
-      selectedRow.get.move(direction)
+    for (row <- selectedRow) {
+      row.move(direction)
       flushCaches()
       fireStateChanged()
     }
 
   def openSelectedModule() =
-    if (selectedRow.isDefined && !selectedRow.get.isLeaf && openedModules.add(selectedRow.get)) {
+    for (row <- selectedRow if !row.isLeaf && openedModules.add(row)) {
       cachedVisibleModules = null
       fireStateChanged()
     }
 
   def closeSelectedModule() =
-    if (selectedRow.isDefined && !selectedRow.get.isLeaf && openedModules.remove(selectedRow.get)) {
+    for (row <- selectedRow if !row.isLeaf && openedModules.remove(row)) {
       cachedVisibleModules = null
       fireStateChanged()
     }

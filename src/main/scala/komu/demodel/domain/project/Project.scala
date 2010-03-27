@@ -3,17 +3,16 @@
  */
 package komu.demodel.domain.project
 
-import java.util.Collections.unmodifiableList
-import java.util.{ ArrayList, List }
+import collection.mutable.ArrayBuffer
 
-final class Project(name: String) {
+final class Project(val name: String) {
 
-  val _inputSources = new ArrayList[InputSource]
+  val _inputSources = new ArrayBuffer[InputSource]
 
   def addInputSource(inputSource: InputSource) {
     assert(inputSource != null)
-    _inputSources.add(inputSource)
+    _inputSources += inputSource
   }
 
-  def inputSources = unmodifiableList(_inputSources)
+  def inputSources = _inputSources.toList
 }

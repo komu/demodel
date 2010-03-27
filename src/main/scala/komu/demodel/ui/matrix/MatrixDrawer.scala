@@ -3,8 +3,6 @@
  */
 package komu.demodel.ui.matrix
 
-import scala.collection.JavaConversions._
-
 import java.awt.RenderingHints.{ KEY_TEXT_ANTIALIASING, VALUE_TEXT_ANTIALIAS_ON }
 
 import java.awt.{ Color, Dimension, Font, FontMetrics, Graphics2D }
@@ -158,7 +156,7 @@ final class MatrixDrawer(model: DependencyMatrixViewModel, g: Graphics2D) extend
 
     // Paint background for module list
     g.setColor(headerBackground)
-    g.fillRect(0, gridY, leftWidth, visibleModules.size() * cellHeight)
+    g.fillRect(0, gridY, leftWidth, visibleModules.size * cellHeight)
 
     val headerYOffset = metrics.headerYOffset
 

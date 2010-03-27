@@ -5,7 +5,7 @@ package komu.demodel.utils
 
 import java.io.{ File, FileFilter }
 
-final class FileSet(rootDirectory: File, filter: FileFilter) extends java.lang.Iterable[File] {
+final class FileSet(rootDirectory: File, filter: FileFilter) extends Iterable[File] {
   assert(rootDirectory != null)
   assert(filter != null)
 
