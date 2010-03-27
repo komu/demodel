@@ -2,6 +2,13 @@
 
 <project name="demodel" default="package">
 	
+	<taskdef resource="scala/tools/ant/antlib.xml">
+    <classpath>
+      <pathelement location="libs/tools/scala-compiler.jar" />
+      <pathelement location="libs/main/scala-library.jar" />
+    </classpath>
+  </taskdef>
+	
   <property name="version" value="0.1-dev" />
   <property name="targetjar" value="target/${ant.project.name}-${version}.jar" />
 	
@@ -19,12 +26,26 @@
 	
   <target name="compile">
   	<mkdir dir="target/classes" />
+  	<mkdir dir="target/scala-classes" />
+  	
   	<javac
   	  srcdir="src/main/java"
   	  destdir="target/classes"
   	  source="1.6"
   	  target="1.6"
   	  classpathref="classpath.main" />
+  	
+    <scalac srcdir="src/main/scala" 
+            destdir="target/scala-classes"
+            deprecation="yes"
+            unchecked="yes"
+            encoding="UTF-8"
+			      target="jvm-1.5" 
+			      classpathref="classpath.main">
+	    <classpath>
+	      <pathelement location="target/classes" />
+	    </classpath>
+		</scalac>
   </target>
 
   <target name="compile-tests" depends="compile">
@@ -59,6 +80,7 @@
         <attribute name="Main-Class" Value="komu.demodel.ui.Main" />
       </manifest>
       <fileset dir="target/classes" />
+      <fileset dir="target/scala-classes" />
       <zipgroupfileset dir="libs/main" includes="*.jar" />
     </jar>
   </target>
