@@ -11,10 +11,21 @@ import SignatureUtils.{ getTypesFromGenericMethodSignature, getTypesFromGenericS
 import java.util.{ Map, TreeMap }
 
 import komu.demodel.domain._
-import komu.demodel.utils.{ Resource, ResourceProvider }
+import komu.demodel.domain.project._
+import komu.demodel.utils.Resource
 import komu.demodel.utils.ResourceProvider;
 
 import org.objectweb.asm._
+
+object JavaDependencyParser {
+  
+  def parse(inputSources: Iterable[InputSource]) = {
+    val parser = new JavaDependencyParser
+    for (source <- inputSources)
+      parser.parse(source)
+    parser.rootModule
+  }
+}
 
 class JavaDependencyParser {
 
@@ -24,12 +35,7 @@ class JavaDependencyParser {
   
   
   def parse(inputSource: InputSource) {
-    val resources = inputSource.getResources();
-    try {
-      resources.foreach(visitResource)
-    } finally {
-      resources.close()
-    }
+    inputSource.withResources(visitResource)
   }
 
   def rootModule = {
