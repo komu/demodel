@@ -26,26 +26,14 @@
 	
   <target name="compile">
   	<mkdir dir="target/classes" />
-  	<mkdir dir="target/scala-classes" />
-  	
-  	<javac
-  	  srcdir="src/main/java"
-  	  destdir="target/classes"
-  	  source="1.6"
-  	  target="1.6"
-  	  classpathref="classpath.main" />
   	
     <scalac srcdir="src/main/scala" 
-            destdir="target/scala-classes"
+            destdir="target/classes"
             deprecation="yes"
             unchecked="yes"
             encoding="UTF-8"
 			      target="jvm-1.5" 
-			      classpathref="classpath.main">
-	    <classpath>
-	      <pathelement location="target/classes" />
-	    </classpath>
-		</scalac>
+			      classpathref="classpath.main" />
   </target>
 
   <target name="compile-tests" depends="compile">
@@ -80,7 +68,6 @@
         <attribute name="Main-Class" Value="komu.demodel.ui.Main" />
       </manifest>
       <fileset dir="target/classes" />
-      <fileset dir="target/scala-classes" />
       <zipgroupfileset dir="libs/main" includes="*.jar" />
     </jar>
   </target>
