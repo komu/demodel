@@ -73,9 +73,9 @@ final class DependencyMatrixViewModel(root: Module) {
 
     var sb = new StringBuilder
     sb.append("Dependencies from module\n")
-    sb.append(selectedColumn.get.getName)
+    sb.append(selectedColumn.get.name)
     sb.append("\nto module\n    ")
-    sb.append(selectedRow.get.getName)
+    sb.append(selectedRow.get.name)
     sb.append("\n\n")
         
     listDependencies(selectedColumn.get, selectedRow.get, sb)
@@ -83,16 +83,16 @@ final class DependencyMatrixViewModel(root: Module) {
   }
 
   private def listDependencies(fromModule: Module, toModule: Module, sb: StringBuilder) {
-    for (fromChild <- fromModule.getChildren)
+    for (fromChild <- fromModule.children)
       listDependencies(fromChild, toModule, sb)
 
-    for (toChild <- toModule.getChildren)
+    for (toChild <- toModule.children)
       listDependencies(fromModule, toChild, sb)
 
     var dependencies = fromModule.getDependencies(toModule)
     if (dependencies != null)
       for (d <- dependencies)
-        sb.append("Depencency from=").append(fromModule.getName).append(" ").append(d).append("\n")
+        sb.append("Depencency from=").append(fromModule.name).append(" ").append(d).append("\n")
   }
 
   def visibleModules = {
@@ -108,7 +108,7 @@ final class DependencyMatrixViewModel(root: Module) {
     for (module <- modules) {
       result.add(module)
       if (openedModules.contains(module))
-        addVisibleModules(result, module.getChildren())
+        addVisibleModules(result, module.children)
     }
   }
 
@@ -143,20 +143,20 @@ final class DependencyMatrixViewModel(root: Module) {
     }
 
   def openSelectedModule() =
-    if (selectedRow.isDefined && !selectedRow.get.isLeaf() && openedModules.add(selectedRow.get)) {
+    if (selectedRow.isDefined && !selectedRow.get.isLeaf && openedModules.add(selectedRow.get)) {
       cachedVisibleModules = null
       fireStateChanged()
     }
 
   def closeSelectedModule() =
-    if (selectedRow.isDefined && !selectedRow.get.isLeaf() && openedModules.remove(selectedRow.get)) {
+    if (selectedRow.isDefined && !selectedRow.get.isLeaf && openedModules.remove(selectedRow.get)) {
       cachedVisibleModules = null
       fireStateChanged()
     }
     
   def isOpened(module: Module) = openedModules.contains(module)
 
-  def allModules = root.getSelfAndAncestors
+  def allModules = root.selfAndAncestors
     
   def hasSelectedRow = selectedRow.isDefined
   def hasSelectedCell = selectedRow.isDefined && selectedColumn.isDefined
