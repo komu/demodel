@@ -49,17 +49,16 @@ final class ModuleDetailsView(model: DependencyMatrixViewModel) extends JPanel {
     def updateViewFromSelectedModule() =
       model.selectedRow match {
         case Some(module: PackageModule) => {
-          val metrics = module.getMetrics
-
+          val metrics = module.metrics
           val numberFormat = NumberFormat.getInstance
 
-          numberOfTypes.setText(numberFormat.format(metrics.getNumberOfTypes))
-          numberOfAbstractTypes.setText(numberFormat.format(metrics.getNumberOfAbstractTypes))
-          afferentCouplings.setText(numberFormat.format(metrics.getAfferentCouplings))
-          efferentCouplings.setText(numberFormat.format(metrics.getEfferentCouplings))
-          abstractness.setText(numberFormat.format(metrics.getAbstractness))
-          instability.setText(numberFormat.format(metrics.getInstability))
-          distance.setText(numberFormat.format(metrics.getDistanceFromMainSequence))
+          numberOfTypes.setText(numberFormat.format(metrics.numberOfTypes))
+          numberOfAbstractTypes.setText(numberFormat.format(metrics.numberOfAbstractTypes))
+          afferentCouplings.setText(numberFormat.format(metrics.afferentCouplings))
+          efferentCouplings.setText(numberFormat.format(metrics.efferentCouplings))
+          abstractness.setText(numberFormat.format(metrics.abstractness))
+          instability.setText(numberFormat.format(metrics.instability))
+          distance.setText(numberFormat.format(metrics.distanceFromMainSequence))
         }
       case _ => {
         numberOfTypes.setText("-")

@@ -185,10 +185,10 @@ final class MatrixDrawer(model: DependencyMatrixViewModel, g: Graphics2D) extend
       val xx = metrics.getModuleDepthDx(module) + textdx
       if (model.isOpened(module))
         g.drawString("-", xx, yy)
-      else if (!module.isLeaf())
+      else if (!module.isLeaf)
         g.drawString("+", xx, yy)
 
-      g.drawString(module.getLocalName(), metrics.plusWidth + xx, yy)
+      g.drawString(module.localName, metrics.plusWidth + xx, yy)
       g.drawString(num, leftWidth - numWidth - textdx, yy)
             
       moduleIndex += 1

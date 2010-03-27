@@ -30,12 +30,12 @@ final class MatrixMetrics(private model: DependencyMatrixViewModel,
     val extraWidth = 2 * headerFontMetrics.stringWidth(" 999")
     
     for (module <- model.visibleModules)
-      leftWidth = max(leftWidth, headerFontMetrics.stringWidth(module.getLocalName()) + getModuleDepthDx(module))
+      leftWidth = max(leftWidth, headerFontMetrics.stringWidth(module.localName) + getModuleDepthDx(module))
 
     plusWidth + leftWidth + extraWidth
   }
     
-  def getModuleDepthDx(module: Module) = module.getDepth * depthDelta
+  def getModuleDepthDx(module: Module) = module.depth * depthDelta
   def headerFont = MatrixFonts.headerFont
   def gridFont = MatrixFonts.gridFont
     

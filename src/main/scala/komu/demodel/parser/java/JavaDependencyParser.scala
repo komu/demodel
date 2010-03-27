@@ -29,7 +29,7 @@ object JavaDependencyParser {
 
 class JavaDependencyParser {
 
-  private val _rootModule = new PackageModule("<root>", null)
+  private val _rootModule = new PackageModule("<root>", None)
   private val modules = new TreeMap[String, Module]
   private var currentModule: Module = _
   
