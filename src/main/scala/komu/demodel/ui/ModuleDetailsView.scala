@@ -8,9 +8,8 @@ import java.text.NumberFormat
 import javax.swing.{ JLabel, JPanel }
 import javax.swing.event.{ ChangeEvent, ChangeListener }
 
-import komu.demodel.domain.{ PackageMetrics, PackageModule }
+import komu.demodel.domain.PackageModule
 import komu.demodel.ui.model.DependencyMatrixViewModel
-import komu.demodel.utils.Check
 
 import com.jgoodies.forms.builder.DefaultFormBuilder
 import com.jgoodies.forms.layout.FormLayout

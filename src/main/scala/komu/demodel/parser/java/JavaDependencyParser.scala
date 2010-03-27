@@ -13,7 +13,6 @@ import java.util.{ Map, TreeMap }
 import komu.demodel.domain._
 import komu.demodel.domain.project._
 import komu.demodel.utils.Resource
-import komu.demodel.utils.ResourceProvider;
 
 import org.objectweb.asm._
 
