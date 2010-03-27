@@ -46,38 +46,38 @@ object Main {
     for (source <- project.getInputSources)
       parser.parse(source)
 
-      val root = parser.getRoot
+    val root = parser.rootModule
 
-      val model = new DependencyMatrixViewModel(root)
-      val view = new DependencyMatrixView(model)
+    val model = new DependencyMatrixViewModel(root)
+    val view = new DependencyMatrixView(model)
 
-      val fileMenu = new JMenu("File")
-      fileMenu.setMnemonic('F')
-      fileMenu.add(view.exportAction)
-      if (!isRunningOnMacOSX) {
-        // On OS X, we already got Quit under application menu, no need to add other exit action
-        fileMenu.addSeparator()
-        fileMenu.add(ExitAction)
-      }
+    val fileMenu = new JMenu("File")
+    fileMenu.setMnemonic('F')
+    fileMenu.add(view.exportAction)
+    if (!isRunningOnMacOSX) {
+      // On OS X, we already got Quit under application menu, no need to add other exit action
+      fileMenu.addSeparator()
+      fileMenu.add(ExitAction)
+    }
 
-      val modulesMenu = new JMenu("Modules")
-      modulesMenu.setMnemonic('M')
-      modulesMenu.add(view.toggleAction)
-      modulesMenu.add(view.sortModulesAction)
-      modulesMenu.add(view.detailsAction)
+    val modulesMenu = new JMenu("Modules")
+    modulesMenu.setMnemonic('M')
+    modulesMenu.add(view.toggleAction)
+    modulesMenu.add(view.sortModulesAction)
+    modulesMenu.add(view.detailsAction)
 
-      val menuBar = new JMenuBar
-      menuBar.add(fileMenu)
-      menuBar.add(modulesMenu)
+    val menuBar = new JMenuBar
+    menuBar.add(fileMenu)
+    menuBar.add(modulesMenu)
 
-      val frame = new JFrame("demodel")
-      frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE)
-      frame.setJMenuBar(menuBar)
-      frame.add(new JScrollPane(view), BorderLayout.CENTER)
-      frame.add(new ModuleDetailsView(model), BorderLayout.EAST)
-      frame.setSize(800, 600)
-      frame.setLocationRelativeTo(null)
-      frame.setVisible(true)
+    val frame = new JFrame("demodel")
+    frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE)
+    frame.setJMenuBar(menuBar)
+    frame.add(new JScrollPane(view), BorderLayout.CENTER)
+    frame.add(new ModuleDetailsView(model), BorderLayout.EAST)
+    frame.setSize(800, 600)
+    frame.setLocationRelativeTo(null)
+    frame.setVisible(true)
   }
 
   private def initializePlatformLookAndFeel() {
