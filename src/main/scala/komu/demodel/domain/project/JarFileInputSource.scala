@@ -3,7 +3,7 @@
  */
 package komu.demodel.domain.project
 
-import scala.collection.JavaConversions._
+import scala.collection.JavaConversions.asIterator
 import java.io.File
 import java.util.jar.{ JarEntry, JarFile }
 import komu.demodel.utils.Resource

@@ -3,8 +3,6 @@
  */
 package komu.demodel.ui
 
-import scala.collection.JavaConversions._
-
 import java.io.File
 import java.awt.BorderLayout
 import java.awt.event.{ ActionEvent, KeyEvent }
