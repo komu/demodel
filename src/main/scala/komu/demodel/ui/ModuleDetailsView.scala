@@ -38,9 +38,9 @@ final class ModuleDetailsView(model: DependencyMatrixViewModel) extends JPanel {
       builder.append("Distance: ", distance)
         
       add(builder.getPanel)
-        
-      model.onChange { updateViewFromSelectedModule }
+
       updateViewFromSelectedModule()
+      model.selectedRow.onChange { updateViewFromSelectedModule() }
     }
     
     def updateViewFromSelectedModule() =
