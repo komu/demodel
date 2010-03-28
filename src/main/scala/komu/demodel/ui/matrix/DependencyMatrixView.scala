@@ -94,7 +94,7 @@ class DependencyMatrixView(model: DependencyMatrixViewModel)
   }
     
   def toggleSelectedRow() =
-    for (row <- model.selectedRow)
+    for (row <- model.selectedRow())
       if (model.isOpened(row))
         model.closeSelectedModule()
       else
@@ -108,10 +108,10 @@ class DependencyMatrixView(model: DependencyMatrixViewModel)
       val selectedColumn = mm.findModuleByColumn(e.getX)
           
       if (e.getClickCount == 1) {
-        model.selectedRow = selectedRow
-        model.selectedColumn = selectedColumn
+        model.selectedRow := selectedRow
+        model.selectedColumn := selectedColumn
       } else if (e.getClickCount == 2) {
-        if (selectedRow.isDefined && selectedRow == model.selectedRow && selectedColumn.isEmpty)
+        if (selectedRow.isDefined && selectedRow == model.selectedRow() && selectedColumn.isEmpty)
           toggleSelectedRow()
       }
     }
@@ -144,7 +144,7 @@ class DependencyMatrixView(model: DependencyMatrixViewModel)
 
     def actionPerformed(e: ActionEvent) {
       model.moveSelection(direction)
-      for (selected <- model.selectedRow) {
+      for (selected <- model.selectedRow()) {
         val index = model.visibleModules.indexOf(selected)
 
         val metrics = createMetrics()

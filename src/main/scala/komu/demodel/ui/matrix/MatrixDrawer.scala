@@ -95,9 +95,9 @@ final class MatrixDrawer(model: DependencyMatrixViewModel, g: Graphics2D) extend
   }
 
   private def drawSelectedCell() {
-    if (model.selectedColumn.isDefined && model.selectedRow.isDefined) {
-      val selectedColumn = model.visibleModules.indexOf(model.selectedColumn.get)
-      val selectedRow = model.visibleModules.indexOf(model.selectedRow.get)
+    for (row <- model.selectedRow(); col <- model.selectedColumn()) {
+      val selectedColumn = model.visibleModules.indexOf(col)
+      val selectedRow = model.visibleModules.indexOf(row)
             
       val cellHeight = metrics.cellHeight
       val cellWidth = metrics.cellWidth
@@ -152,7 +152,7 @@ final class MatrixDrawer(model: DependencyMatrixViewModel, g: Graphics2D) extend
     val cellHeight = metrics.cellHeight
     val gridY = cellHeight
     val visibleModules = model.visibleModules
-    val selected = model.selectedRow
+    val selected = model.selectedRow()
 
     // Paint background for module list
     g.setColor(headerBackground)
@@ -205,7 +205,7 @@ final class MatrixDrawer(model: DependencyMatrixViewModel, g: Graphics2D) extend
         
     g.setFont(metrics.headerFont)
         
-    val selected = model.selectedColumn
+    val selected = model.selectedColumn()
 
     for (moduleIndex <- 0 until moduleCount) {
       val x = leftHeader + (moduleIndex * cellWidth)

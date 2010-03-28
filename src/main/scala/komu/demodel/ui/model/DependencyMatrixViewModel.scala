@@ -3,6 +3,7 @@
  */
 package komu.demodel.ui.model
 
+import collection.immutable.HashSet
 import collection.mutable.ArrayBuffer
 
 import javax.swing.event.{ ChangeEvent, ChangeListener }
@@ -19,20 +20,20 @@ import komu.demodel.utils.ObservableProperty.observable
  */
 final class DependencyMatrixViewModel(root: Module) {
 
-  private val _selectedRow = observable[Option[Module]](Some(root))
-  private var _selectedColumn = observable[Option[Module]](None)
-  
-  private val openedModules = new IdentityHashSet[Module]
-  openedModules.add(root)
-  
-  _selectedRow.onChange { fireStateChanged() }
-  _selectedColumn.onChange { fireStateChanged() }
-
+  val selectedRow = observable[Option[Module]](Some(root))
+  val selectedColumn = observable[Option[Module]](None)
+  private val openedModules = observable(HashSet[Module](root))
   private val NO_SELECTION = -1
-    
   private val listeners = new ChangeListenerList
   private var cachedVisibleModules: ArrayBuffer[Module] = null
-    
+  
+  selectedRow.onChange { fireStateChanged() }
+  selectedColumn.onChange { fireStateChanged() }
+  openedModules.onChange { 
+    cachedVisibleModules = null
+    fireStateChanged()
+  }
+ 
   def flushCaches() {
     cachedVisibleModules = null
     root.flushCaches()
@@ -46,19 +47,7 @@ final class DependencyMatrixViewModel(root: Module) {
     
   private def fireStateChanged() =
     listeners.stateChanged(new ChangeEvent(this))
-
-  def selectedRow = _selectedRow()
   
-  def selectedRow_=(module: Option[Module]) {
-    _selectedRow := module
-  }
-  
-  def selectedColumn = _selectedColumn()
-
-  def selectedColumn_=(module: Option[Module]) {
-    _selectedColumn := module
-  }
-    
   def visibleModuleCount = visibleModules.size
 
   def dependencyStrength(from: Int, to: Int) = {
@@ -67,16 +56,18 @@ final class DependencyMatrixViewModel(root: Module) {
   }
     
   def dependencyDetailsOfSelectedCell: String = {
-    if (selectedRow.isEmpty || selectedColumn.isEmpty) return ""
-
+    val row = selectedRow()
+    val col = selectedColumn() 
+    if (row.isEmpty || col.isEmpty) return ""
+    
     var sb = new StringBuilder
     sb.append("Dependencies from module\n")
-    sb.append(selectedColumn.get.name)
+    sb.append(col.get.name)
     sb.append("\nto module\n    ")
-    sb.append(selectedRow.get.name)
+    sb.append(row.get.name)
     sb.append("\n\n")
         
-    listDependencies(selectedColumn.get, selectedRow.get, sb)
+    listDependencies(col.get, row.get, sb)
     sb.toString
   }
 
@@ -105,7 +96,7 @@ final class DependencyMatrixViewModel(root: Module) {
   private def addVisibleModules(result: ArrayBuffer[Module], modules: Iterable[Module]) {
     for (module <- modules) {
       result += module
-      if (openedModules.contains(module))
+      if (openedModules().contains(module))
         addVisibleModules(result, module.children)
     }
   }
@@ -113,48 +104,44 @@ final class DependencyMatrixViewModel(root: Module) {
   def getModuleAt(index: Int) = visibleModules(index)
 
   def moveSelection(direction: MoveDirection) {
-    if (selectedRow.isEmpty) return
+    if (selectedRow().isEmpty) return
         
-    var index = visibleModules.indexOf(selectedRow.get)
+    var index = visibleModules.indexOf(selectedRow().get)
     assert(index != -1)
         
     val newIndex = index + direction.delta
     if (newIndex >= 0 && newIndex < visibleModules.size) {
-      selectedRow = Some(visibleModules(newIndex))
+      selectedRow := Some(visibleModules(newIndex))
       fireStateChanged()
     }
   }
 
   def sortModules() =
-    for (row <- selectedRow) {
+    for (row <- selectedRow()) {
       row.sortChildren()
       flushCaches()
       fireStateChanged()
     }
 
   def moveSelectedModule(direction: MoveDirection) =
-    for (row <- selectedRow) {
+    for (row <- selectedRow()) {
       row.move(direction)
       flushCaches()
       fireStateChanged()
     }
 
   def openSelectedModule() =
-    for (row <- selectedRow if !row.isLeaf && openedModules.add(row)) {
-      cachedVisibleModules = null
-      fireStateChanged()
-    }
+    for (row <- selectedRow() if !row.isLeaf)
+      openedModules := openedModules() + row
 
   def closeSelectedModule() =
-    for (row <- selectedRow if !row.isLeaf && openedModules.remove(row)) {
-      cachedVisibleModules = null
-      fireStateChanged()
-    }
+    for (row <- selectedRow() if !row.isLeaf)
+      openedModules := openedModules() - row
     
-  def isOpened(module: Module) = openedModules.contains(module)
+  def isOpened(module: Module) = openedModules().contains(module)
 
   def allModules = root.selfAndAncestors
     
-  def hasSelectedRow = selectedRow.isDefined
-  def hasSelectedCell = selectedRow.isDefined && selectedColumn.isDefined
+  def hasSelectedRow = selectedRow().isDefined
+  def hasSelectedCell = selectedRow().isDefined && selectedColumn().isDefined
 }
