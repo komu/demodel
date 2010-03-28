@@ -4,9 +4,7 @@
 package komu.demodel.ui
 
 import java.text.NumberFormat
-
 import javax.swing.{ JLabel, JPanel }
-import javax.swing.event.{ ChangeEvent, ChangeListener }
 
 import komu.demodel.domain.PackageModule
 import komu.demodel.ui.model.DependencyMatrixViewModel
@@ -41,7 +39,7 @@ final class ModuleDetailsView(model: DependencyMatrixViewModel) extends JPanel {
         
       add(builder.getPanel)
         
-      model.addListener(MyModelListener)
+      model.onChange { updateViewFromSelectedModule }
       updateViewFromSelectedModule()
     }
     
@@ -69,8 +67,4 @@ final class ModuleDetailsView(model: DependencyMatrixViewModel) extends JPanel {
         distance.setText("-")
       }
     }
-
-  object MyModelListener extends ChangeListener {
-    def stateChanged(e: ChangeEvent) = updateViewFromSelectedModule()
-  }
 }
