@@ -102,9 +102,11 @@ final class DependencyMatrixViewModel(root: Module) {
   }
 
   private def addVisibleModules(result: ArrayBuffer[Module], modules: Iterable[Module]) {
-    result ++= modules
-    for (module <- modules if openedModules.contains(module))
-      addVisibleModules(result, module.children)
+    for (module <- modules) {
+      result += module
+      if (openedModules.contains(module))
+        addVisibleModules(result, module.children)
+    }
   }
 
   def getModuleAt(index: Int) = visibleModules(index)
