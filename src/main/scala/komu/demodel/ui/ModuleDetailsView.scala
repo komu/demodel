@@ -44,7 +44,7 @@ final class ModuleDetailsView(model: DependencyMatrixViewModel) extends JPanel {
     }
     
     def updateViewFromSelectedModule() =
-      model.selectedRow match {
+      model.selectedRow() match {
         case Some(module: PackageModule) => {
           val metrics = module.metrics
           val numberFormat = NumberFormat.getInstance
