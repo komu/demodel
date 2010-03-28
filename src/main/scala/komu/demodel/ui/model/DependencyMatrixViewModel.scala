@@ -9,6 +9,7 @@ import javax.swing.event.{ ChangeEvent, ChangeListener }
 
 import komu.demodel.domain.{ Dependency, Module, MoveDirection }
 import komu.demodel.utils.{ ChangeListenerList, IdentityHashSet }
+import komu.demodel.utils.ObservableProperty.observable
 
 /**
  * Represents the state of the view, but not of the underlying model.
@@ -18,11 +19,14 @@ import komu.demodel.utils.{ ChangeListenerList, IdentityHashSet }
  */
 final class DependencyMatrixViewModel(root: Module) {
 
-  private var _selectedRow: Option[Module] = Some(root)
-  private var _selectedColumn: Option[Module] = None
+  private val _selectedRow = observable[Option[Module]](Some(root))
+  private var _selectedColumn = observable[Option[Module]](None)
   
   private val openedModules = new IdentityHashSet[Module]
   openedModules.add(root)
+  
+  _selectedRow.onChange { fireStateChanged() }
+  _selectedColumn.onChange { fireStateChanged() }
 
   private val NO_SELECTION = -1
     
@@ -34,28 +38,25 @@ final class DependencyMatrixViewModel(root: Module) {
     root.flushCaches()
   }
 
-  def addListener(listener: ChangeListener) =
-    listeners.add(listener)
+  def onChange(listener: => Unit) {
+    listeners.add(new ChangeListener {
+      def stateChanged(event: ChangeEvent) = listener
+    })
+  }
     
   private def fireStateChanged() =
     listeners.stateChanged(new ChangeEvent(this))
 
-  def selectedRow = _selectedRow
+  def selectedRow = _selectedRow()
   
   def selectedRow_=(module: Option[Module]) {
-    if (module != _selectedRow) {
-      _selectedRow = module
-      fireStateChanged()
-    }
+    _selectedRow := module
   }
   
-  def selectedColumn = _selectedColumn
+  def selectedColumn = _selectedColumn()
 
   def selectedColumn_=(module: Option[Module]) {
-    if (module != _selectedColumn) {
-      _selectedColumn = module
-      fireStateChanged()
-    }
+    _selectedColumn := module
   }
     
   def visibleModuleCount = visibleModules.size

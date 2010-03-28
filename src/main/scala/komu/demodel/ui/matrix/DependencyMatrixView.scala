@@ -20,7 +20,6 @@ class DependencyMatrixView(model: DependencyMatrixViewModel)
     extends JComponent with FontMetricsProvider {
 
   val exportFileChooser = new JFileChooser
-  model.addListener(MyModelListener)
   updateSize()
   updateCommandStates()
   setFocusable(true)
@@ -35,6 +34,12 @@ class DependencyMatrixView(model: DependencyMatrixViewModel)
   getActionMap.put("move-selection-down", new MoveSelectionAction(MoveDirection.DOWN))
   getActionMap.put("move-selected-module-up", new MoveSelectedModuleAction(MoveDirection.UP))
   getActionMap.put("move-selected-module-down", new MoveSelectedModuleAction(MoveDirection.DOWN))
+
+  model.onChange {
+    updateCommandStates()
+    updateSize()
+    repaint()
+  }
 
   def updateSize() {
     val preferredSize = createMetrics().gridSize
@@ -94,14 +99,6 @@ class DependencyMatrixView(model: DependencyMatrixViewModel)
         model.closeSelectedModule()
       else
         model.openSelectedModule()
-
-  object MyModelListener extends ChangeListener {
-    def stateChanged(e: ChangeEvent) {
-      updateCommandStates()
-      updateSize()
-      repaint()
-    }
-  }
 
   object MyMouseListener extends MouseAdapter {
     override def mouseClicked(e: MouseEvent) {
