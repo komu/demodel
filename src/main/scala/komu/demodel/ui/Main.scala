@@ -14,6 +14,7 @@ import komu.demodel.domain.project.{ ClassDirectoryInputSource, JarFileInputSour
 import komu.demodel.parser.java.JavaDependencyParser
 import komu.demodel.ui.matrix.DependencyMatrixView
 import komu.demodel.ui.model.DependencyMatrixViewModel
+import komu.demodel.utils.ui.MenuBuilder.menuBar
 
 object Main {
 
@@ -31,44 +32,44 @@ object Main {
     }
 
   def loadFile(file: File) {
+    val project = createProject(file)
+    val root = JavaDependencyParser.parse(project.inputSources)
+    val model = new DependencyMatrixViewModel(root)
+    val matrixView = new DependencyMatrixView(model)
+
+    val frame = new JFrame("demodel")
+    frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE)
+    frame.setJMenuBar(menuBar { bar =>
+      bar.menu("File", 'F') { menu =>
+        menu.add(matrixView.exportAction)
+        if (!isRunningOnMacOSX) {
+          // On OS X, we already got Quit under application menu, 
+          // no need to add other exit action
+          menu.addSeparator()
+          menu.add(ExitAction)
+        }
+      }
+      bar.menu("Modules", 'M') { menu =>
+        menu.add(matrixView.toggleAction)
+        menu.add(matrixView.sortModulesAction)
+        menu.add(matrixView.detailsAction)
+      }
+    })
+    
+    frame.add(new JScrollPane(matrixView), BorderLayout.CENTER)
+    frame.add(new ModuleDetailsView(model), BorderLayout.EAST)
+    frame.setSize(800, 600)
+    frame.setLocationRelativeTo(null)
+    frame.setVisible(true)
+  }
+  
+  private def createProject(file: File) = {
     val project = new Project(file.toString)
     if (file.isDirectory)
       project.addInputSource(new ClassDirectoryInputSource(file))
     else
       project.addInputSource(new JarFileInputSource(file))
-
-    val root = JavaDependencyParser.parse(project.inputSources)
-
-    val model = new DependencyMatrixViewModel(root)
-    val view = new DependencyMatrixView(model)
-
-    val fileMenu = new JMenu("File")
-    fileMenu.setMnemonic('F')
-    fileMenu.add(view.exportAction)
-    if (!isRunningOnMacOSX) {
-      // On OS X, we already got Quit under application menu, no need to add other exit action
-      fileMenu.addSeparator()
-      fileMenu.add(ExitAction)
-    }
-
-    val modulesMenu = new JMenu("Modules")
-    modulesMenu.setMnemonic('M')
-    modulesMenu.add(view.toggleAction)
-    modulesMenu.add(view.sortModulesAction)
-    modulesMenu.add(view.detailsAction)
-
-    val menuBar = new JMenuBar
-    menuBar.add(fileMenu)
-    menuBar.add(modulesMenu)
-
-    val frame = new JFrame("demodel")
-    frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE)
-    frame.setJMenuBar(menuBar)
-    frame.add(new JScrollPane(view), BorderLayout.CENTER)
-    frame.add(new ModuleDetailsView(model), BorderLayout.EAST)
-    frame.setSize(800, 600)
-    frame.setLocationRelativeTo(null)
-    frame.setVisible(true)
+    project
   }
 
   private def initializePlatformLookAndFeel() {
