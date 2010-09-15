@@ -8,7 +8,7 @@ import java.io.File
 import java.util.jar.{ JarEntry, JarFile }
 import komu.demodel.utils.Resource
 
-final class JarFileInputSource(private file: File) extends InputSource {
+final class JarFileInputSource(file: File) extends InputSource {
     
   def withResources(thunk: Resource => Unit) {
     val jar = new JarFile(file)

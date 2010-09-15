@@ -17,8 +17,8 @@ object MatrixFonts {
   val gridFont = new Font("dialog", Font.PLAIN, 11)
 }
 
-final class MatrixMetrics(private model: DependencyMatrixViewModel, 
-                          private fontMetricsProvider: FontMetricsProvider) {
+final class MatrixMetrics(model: DependencyMatrixViewModel, 
+                          fontMetricsProvider: FontMetricsProvider) {
   
   val headerFontMetrics = fontMetricsProvider.getFontMetrics(headerFont)
   val gridFontMetrics = fontMetricsProvider.getFontMetrics(gridFont)
