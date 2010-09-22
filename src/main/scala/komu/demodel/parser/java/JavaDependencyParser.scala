@@ -68,7 +68,7 @@ class JavaDependencyParser {
   private def getPackageModuleByName(name: String): PackageModule =
     getModuleByName(name, ModuleType.PACKAGE) match {
       case m: PackageModule => m
-      case _                => throw new Exception("module '" + name + "' is not a package")
+      case m: ClassModule   => m.parent.get
     }
     
   private def getModuleByName(name: String, moduleType: ModuleType) = {
@@ -81,7 +81,6 @@ class JavaDependencyParser {
   }
 
   private def getParentModule(name: String) = {
-    //val n = stripEverythingAfter(name, '$')
     name.lastIndexOf('.') match {
       case -1    => _rootModule
       case index => getPackageModuleByName(name.substring(0, index))
