@@ -3,8 +3,6 @@
  */
 package komu.demodel.parser.java
 
-import scala.collection.JavaConversions._
-
 import AccessUtils.getTypeFromAccessFlags
 import SignatureUtils.{ getTypesFromGenericMethodSignature, getTypesFromGenericSignature }
 
@@ -60,12 +58,17 @@ class JavaDependencyParser {
   }
     
   private def getModuleForType(className: String) =
-    getModuleByName(moduleNameForType(className), ModuleType.TYPE).asInstanceOf[ClassModule]
+    try {
+      getModuleByName(moduleNameForType(className), ModuleType.TYPE).asInstanceOf[ClassModule]
+    } catch {
+      case e => throw new Exception("failed to resolve module for type '" + className + "': " + e, e)
+    }
+  
 
   private def getPackageModuleByName(name: String): PackageModule =
     getModuleByName(name, ModuleType.PACKAGE) match {
       case m: PackageModule => m
-      case _                => throw new Exception("module: " + name + " is not a package")
+      case _                => throw new Exception("module '" + name + "' is not a package")
     }
     
   private def getModuleByName(name: String, moduleType: ModuleType) = {
@@ -77,15 +80,26 @@ class JavaDependencyParser {
     module
   }
 
-  private def getParentModule(name: String) =
+  private def getParentModule(name: String) = {
+    //val n = stripEverythingAfter(name, '$')
     name.lastIndexOf('.') match {
       case -1    => _rootModule
       case index => getPackageModuleByName(name.substring(0, index))
     }
+  }
+  
+  private def stripEverythingAfter(s: String, ch: Char) =
+    s.lastIndexOf(ch) match {
+	  case -1 => s
+	  case i  => s.substring(0, i)
+    }
     
-  private def moduleNameForType(name: String) = name.replace('/', '.')
+  private def moduleNameForType(name: String) =
+	  name.replace('/', '.')
     
   private def addDependencyToType(typeName: String, dependencyType: DependencyType) {
+	//if (typeName.last.isDigit) return; // FIXME: hack to ignore classes of form "foo.Bar.1"
+	  
     val target = getModuleForType(typeName)
     if (currentModule != target)
       currentModule.addDependency(target, dependencyType)
@@ -148,8 +162,10 @@ class JavaDependencyParser {
 
     def visitLocalVariable(name: String, signature: String, genericSignature: String, start: Label, end: Label, index: Int) {
       var descriptor = if (genericSignature != null) genericSignature else signature
-      for (ty <- getTypesFromGenericSignature(descriptor))
+      for (ty <- getTypesFromGenericSignature(descriptor)) {
+    	//  System.out.println("type: " +ty + "(signature: " + descriptor + ")")
         addDependency(ty, DependencyType.REF)
+      }
     }
         
     def visitTypeInsn(opcode: Int, desc: String) =

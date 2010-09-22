@@ -32,29 +32,34 @@
             deprecation="yes"
             unchecked="yes"
             encoding="UTF-8"
-			      target="jvm-1.5" 
-			      classpathref="classpath.main" />
+            target="jvm-1.5" 
+            classpathref="classpath.main" />
   </target>
 
   <target name="compile-tests" depends="compile">
     <mkdir dir="target/test-classes" />
-    <javac
-      srcdir="src/test/java"
-      destdir="target/test-classes"
-      source="1.6"
-      target="1.6"
-      classpathref="classpath.test" />
+  	    
+    <scalac srcdir="src/test/scala" 
+            destdir="target/test-classes"
+            deprecation="yes"
+            unchecked="yes"
+            encoding="UTF-8"
+            target="jvm-1.5" 
+            classpathref="classpath.test" />
   </target>
 
   <target name="test" depends="compile-tests" description="Executes tests">
+  	<mkdir dir="target/test-reports" />
+  	
   	<junit haltonerror="true" haltonfailure="true" printsummary="true">
-  	  <batchtest>
-  	    <fileset dir="target/test-classes" includes="**/*Test.class" />
+  	  <batchtest todir="target/test-reports">
+  	    <fileset dir="target/test-classes" includes="**/*Spec.class" />
   	  </batchtest>
       <classpath>
       	<pathelement location="target/test-classes" />
       	<path refid="classpath.test" />
       </classpath>
+      <formatter type="plain" />
     </junit>
   </target>
   	
