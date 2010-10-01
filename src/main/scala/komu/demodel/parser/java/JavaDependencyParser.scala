@@ -15,7 +15,7 @@ import komu.demodel.domain.project._
 import komu.demodel.utils.Resource
 
 import org.objectweb.asm._
-import org.objectweb.asm.tree.{ ClassNode, MethodNode }
+import org.objectweb.asm.tree._
 
 object JavaDependencyParser {
   
@@ -31,8 +31,6 @@ class JavaDependencyParser {
 
   private val _rootModule = new PackageModule("<root>", None)
   private val modules = new TreeMap[String, Module]
-  private var currentModule: Module = _
-  
   
   def parse(inputSource: InputSource) {
     inputSource.withResources(visitResource)
@@ -46,21 +44,91 @@ class JavaDependencyParser {
   }
     
   private def visitResource(resource: Resource) {
-    val in = resource.open();
+    val classNode = parseClassNode(resource)
+    processClass(classNode)
+      
+    for (method <- classNode.methods.map(_.asInstanceOf[MethodNode])) {
+      val complexity = CyclomaticComplexity.cyclomaticComplexity(classNode.name, method)
+      if (complexity >= 10)
+        println("complexity of " + classNode.name + "." + method.name + " is " + complexity)
+    }
+  }
+  
+  private def parseClassNode(resource: Resource): ClassNode = {
+    val in = resource.open()
     try {
-      val reader = new ClassReader(in) 
-      reader.accept(classVisitor, 0)
-      
       var classNode = new ClassNode
-      reader.accept(classNode, 0)
-      
-      for (method <- classNode.methods.map(_.asInstanceOf[MethodNode])) {
-        val complexity = CyclomaticComplexity.cyclomaticComplexity(classNode.name, method)
-        if (complexity >= 10)
-          println("complexity of " + classNode.name + "." + method.name + " is " + complexity)
-      }
+      new ClassReader(in).accept(classNode, 0)
+      classNode
     } finally {
       in.close()
+    }
+  }
+  
+  def processClass(classNode: ClassNode) {
+    val currentModule = getVisitedModuleForType(classNode.name, getTypeFromAccessFlags(classNode.access))
+    if (classNode.superName != null)
+      addDependencyToType(currentModule, classNode.superName, DependencyType.INHERITANCE)
+      
+    for (interfaceName <- classNode.interfaces)
+      addDependencyToType(currentModule, interfaceName.asInstanceOf[String], DependencyType.INHERITANCE)
+      
+    for (method <- classNode.methods.map(_.asInstanceOf[MethodNode]))
+      processMethod(currentModule, method)
+    
+    for (field <- classNode.fields.map(_.asInstanceOf[FieldNode])) {
+      val descriptor = if (field.signature != null) field.signature else field.desc
+      for (ty <- getTypesFromGenericSignature(descriptor))
+        addDependency(currentModule, ty, DependencyType.FIELD_REF);
+    
+      visitAnnotations(field.visibleAnnotations)
+    }
+    
+    /*
+    for (innerClass <- classNode.innerClasses.map(_.asInstanceOf[InnerClassNode])) {
+      println("inner class: " + innerClass.innerName)
+    }
+    */
+  }
+  
+  def visitAnnotations(annotations: java.util.List[_]) {
+    // TODO
+  }
+  
+  def processMethod(currentModule: ClassModule, method: MethodNode) {
+    val descriptor = if (method.signature != null) method.signature else method.desc
+    for (ty <- getTypesFromGenericMethodSignature(descriptor))
+      addDependency(currentModule, ty, DependencyType.REF)
+
+    visitAnnotations(method.visibleAnnotations)
+    if (method.visibleParameterAnnotations != null)
+      for (p <- method.visibleParameterAnnotations)
+        visitAnnotations(p)
+    
+    if (method.localVariables != null)
+      for (v <- method.localVariables.map(_.asInstanceOf[LocalVariableNode])) {
+        var descriptor = if (v.signature != null) v.signature else v.desc
+        for (ty <- getTypesFromGenericSignature(descriptor))
+          addDependency(currentModule, ty, DependencyType.REF)
+      }
+    
+    for (instr <- method.instructions.iterator) {
+      instr match {
+      case ti: TypeInsnNode =>
+        addDependencyToType(currentModule, ti.desc, DependencyType.REF)
+      case fi: FieldInsnNode =>
+        addDependencyToType(currentModule, fi.owner, DependencyType.REF)
+        addDependency(currentModule, Type.getType(fi.desc), DependencyType.REF)
+      case mi: MethodInsnNode =>
+        addDependencyToType(currentModule, mi.owner, DependencyType.REF)
+        addDependency(currentModule, Type.getReturnType(mi.desc), DependencyType.REF)
+        for (ty <- Type.getArgumentTypes(mi.desc))
+          addDependency(currentModule, ty, DependencyType.REF)
+      case mn: MultiANewArrayInsnNode =>
+        addDependency(currentModule, Type.getType(mn.desc), DependencyType.REF)
+      case _ =>
+        ()
+      }
     }
   }
     
@@ -102,137 +170,22 @@ class JavaDependencyParser {
   
   private def stripEverythingAfter(s: String, ch: Char) =
     s.lastIndexOf(ch) match {
-	  case -1 => s
-	  case i  => s.substring(0, i)
+      case -1 => s
+      case i  => s.substring(0, i)
     }
     
   private def moduleNameForType(name: String) =
-	  name.replace('/', '.')
+    name.replace('/', '.')
     
-  private def addDependencyToType(typeName: String, dependencyType: DependencyType) {
-	//if (typeName.last.isDigit) return; // FIXME: hack to ignore classes of form "foo.Bar.1"
+  private def addDependencyToType(currentModule: ClassModule, typeName: String, dependencyType: DependencyType) {
+    //if (typeName.last.isDigit) return; // FIXME: hack to ignore classes of form "foo.Bar.1"
 	  
     val target = getModuleForType(typeName)
     if (currentModule != target)
       currentModule.addDependency(target, dependencyType)
   }
 
-  private def addDependency(toType: Type, dependencyType: DependencyType) {
-    addDependencyToType(toType.getClassName(), dependencyType)
-  }
-    
-  private object classVisitor extends ClassVisitor {
-        
-    def visit(version: Int, access: Int, name: String, signature: String, superName: String, interfaces: Array[String]) {
-      currentModule = getVisitedModuleForType(name, getTypeFromAccessFlags(access))
-            
-      if (superName != null)
-        addDependencyToType(superName, DependencyType.INHERITANCE)
-          
-      for (interfaceName <- interfaces)
-        addDependencyToType(interfaceName, DependencyType.INHERITANCE)
-    }
-        
-    def visitMethod(access: Int, name: String, signature: String, genericSignature: String, exceptions: Array[String]) = {
-      val descriptor = if (genericSignature != null) genericSignature else signature
-      for (ty <- getTypesFromGenericMethodSignature(descriptor))
-        addDependency(ty, DependencyType.REF)
-            
-      methodVisitor
-    }
-        
-    def visitEnd() {
-      currentModule = null
-    }
-        
-    def visitField(access: Int, name: String, signature: String, genericSignature: String, value: Object) = {
-      val descriptor = if (genericSignature != null) genericSignature else signature
-      for (ty <- getTypesFromGenericSignature(descriptor))
-        addDependency(ty, DependencyType.FIELD_REF);
-      fieldVisitor
-    }
-        
-    def visitAnnotation(desc: String, visible: Boolean) = annotationVisitor
-    def visitInnerClass(name: String, outerName: String, innerName: String, access: Int) { }
-    def visitOuterClass(owner: String, name: String, desc: String) { }
-    def visitSource(source: String, debug: String) { }
-    def visitAttribute(attr: Attribute) { }
-  }
-    
-  private object methodVisitor extends MethodVisitor {
-    def visitAnnotation(desc: String, visible: Boolean) = {
-      addDependency(Type.getType(desc), DependencyType.REF)
-      annotationVisitor
-    }
-    
-    def visitParameterAnnotation(parameter: Int, desc: String, visible: Boolean) = {
-      addDependency(Type.getType(desc), DependencyType.REF)
-      annotationVisitor
-    }
-    
-    def visitAnnotationDefault = annotationVisitor
-
-    def visitLocalVariable(name: String, signature: String, genericSignature: String, start: Label, end: Label, index: Int) {
-      var descriptor = if (genericSignature != null) genericSignature else signature
-      for (ty <- getTypesFromGenericSignature(descriptor)) {
-    	//  System.out.println("type: " +ty + "(signature: " + descriptor + ")")
-        addDependency(ty, DependencyType.REF)
-      }
-    }
-        
-    def visitTypeInsn(opcode: Int, desc: String) =
-      addDependencyToType(desc, DependencyType.REF)
-        
-    def visitFieldInsn(opcode: Int, owner: String, name: String, desc: String) {
-      addDependencyToType(owner, DependencyType.REF)
-      addDependency(Type.getType(desc), DependencyType.REF)
-    }
-        
-    def visitMethodInsn(opcode: Int, owner: String, name: String, desc: String) {
-      addDependencyToType(owner, DependencyType.REF)
-      addDependency(Type.getReturnType(desc), DependencyType.REF)
-
-      for (ty <- Type.getArgumentTypes(desc))
-        addDependency(ty, DependencyType.REF)
-    }
-        
-    def visitMultiANewArrayInsn(desc: String, dims: Int) {
-      addDependency(Type.getType(desc), DependencyType.REF)
-    }
-        
-    def visitTryCatchBlock(start: Label, end: Label, handler: Label, typename: String) { }
-    def visitAttribute(attr: Attribute) { }
-    def visitCode() { }
-    def visitEnd() { }
-    def visitIincInsn(variable: Int, increment: Int) { }
-    def visitInsn(opcode: Int) { }
-    def visitIntInsn(opcode: Int, operand: Int) { }
-    def visitJumpInsn(opcode: Int, label: Label) { }
-    def visitLabel(label: Label) { }
-    def visitLdcInsn(cst: Object) { }
-    def visitLineNumber(line: Int, start: Label) { }
-    def visitLookupSwitchInsn(dflt: Label, keys: Array[Int], labels: Array[Label]) { }
-    def visitMaxs(maxStack: Int, maxLocals: Int) { }
-    def visitTableSwitchInsn(min: Int, max: Int, dflt: Label, labels: Array[Label]) { }
-    def visitVarInsn(opcode: Int, variable: Int) { }
-    def visitFrame(frameType: Int, nLocal: Int, local: Array[Object], nStack: Int, stack: Array[Object]) { }
-  }
-    
-  private object fieldVisitor extends FieldVisitor {
-    def visitAnnotation(desc: String, visible: Boolean) = {
-      addDependency(Type.getType(desc), DependencyType.REF)
-      annotationVisitor
-    }
-
-    def visitAttribute(attr: Attribute) = ()
-    def visitEnd = ()
-  }
-    
-  private object annotationVisitor extends AnnotationVisitor {
-    def visit(name: String, value: Object) = ()
-    def visitAnnotation(name: String, desc: String) = this
-    def visitArray(name: String) = this
-    def visitEnum(name: String, desc: String, value: String) = ()
-    def visitEnd() = ()
+  private def addDependency(currentModule: ClassModule, toType: Type, dependencyType: DependencyType) {
+    addDependencyToType(currentModule, toType.getClassName, dependencyType)
   }
 }
