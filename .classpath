@@ -8,5 +8,7 @@
 	<classpathentry kind="lib" path="libs/test/junit-4.7.jar"/>
 	<classpathentry kind="lib" path="libs/test/specs_2.8.0-1.6.5.jar"/>
 	<classpathentry kind="lib" path="libs/main/asm-3.2.jar"/>
+	<classpathentry kind="lib" path="libs/main/asm-analysis-3.2.jar"/>
+	<classpathentry kind="lib" path="libs/main/asm-tree-3.2.jar"/>
 	<classpathentry kind="output" path="target/classes"/>
 </classpath>
