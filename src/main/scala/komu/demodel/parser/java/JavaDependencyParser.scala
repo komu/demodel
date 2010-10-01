@@ -45,7 +45,7 @@ class JavaDependencyParser {
   private def visitResource(resource: Resource) {
     val in = resource.open();
     try {
-      new ClassReader(in).accept(classVisitor, false)
+      new ClassReader(in).accept(classVisitor, 0)
     } finally {
       in.close()
     }
@@ -202,6 +202,7 @@ class JavaDependencyParser {
     def visitMaxs(maxStack: Int, maxLocals: Int) { }
     def visitTableSwitchInsn(min: Int, max: Int, dflt: Label, labels: Array[Label]) { }
     def visitVarInsn(opcode: Int, variable: Int) { }
+    def visitFrame(frameType: Int, nLocal: Int, local: Array[Object], nStack: Int, stack: Array[Object]) { }
   }
     
   private object fieldVisitor extends FieldVisitor {
