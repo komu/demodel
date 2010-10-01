@@ -1,7 +1,7 @@
 package komu.demodel.parser.java
 
 import org.specs._
-import org.objectweb.asm.Type
+import komu.demodel.domain.TypeName
 
 class SignatureSpec extends SpecificationWithJUnit {
 
@@ -65,8 +65,8 @@ class SignatureSpec extends SpecificationWithJUnit {
     private def assertMethodTypes(signature: String, classNames: String*) =
         assertReturnTypes(classNames, SignatureUtils.getTypesFromGenericMethodSignature(signature))
 
-    private def assertReturnTypes(expectedTypes: Iterable[String], types: Iterable[Type]) {
+    private def assertReturnTypes(expectedTypes: Iterable[String], types: Iterable[TypeName]) {
         for ((expected,parsed) <- expectedTypes.zip(types))
-            expected must_== parsed.getClassName
+            expected must_== parsed.name
     }
 }
