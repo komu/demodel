@@ -29,7 +29,7 @@ object JavaDependencyParser {
 class JavaDependencyParser {
 
   private val _rootModule = new PackageModule("<root>", None)
-  private var modules = TreeMap[String, Module]()
+  private var modules = TreeMap[TypeName, Module]()
   
   def parse(inputSource: InputSource) {
     println("parsing classes...")
@@ -57,20 +57,19 @@ class JavaDependencyParser {
   }
   
   def processClass(classNode: ClassNode) {
-    val currentModule = getVisitedModuleForType(classNode.name, getTypeFromAccessFlags(classNode.access))
+    val classModule = getVisitedModuleForType(TypeName.forInternalClassName(classNode.name), getTypeFromAccessFlags(classNode.access))
     if (classNode.superName != null)
-      addDependencyToType(currentModule, classNode.superName, DependencyType.INHERITANCE)
+      addDependency(classModule, TypeName.forInternalClassName(classNode.superName), DependencyType.INHERITANCE)
       
-    for (interfaceName <- classNode.interfaces)
-      addDependencyToType(currentModule, interfaceName.asInstanceOf[String], DependencyType.INHERITANCE)
+    for (interfaceName <- classNode.interfaces.map(_.asInstanceOf[String]))
+      addDependency(classModule, TypeName.forInternalClassName(interfaceName), DependencyType.INHERITANCE)
       
     for (method <- classNode.methods.map(_.asInstanceOf[MethodNode]))
-      processMethod(currentModule, method)
+      processMethod(classModule, method)
     
     for (field <- classNode.fields.map(_.asInstanceOf[FieldNode])) {
-      val descriptor = if (field.signature != null) field.signature else field.desc
-      for (ty <- getTypesFromGenericSignature(descriptor))
-        addDependency(currentModule, ty, DependencyType.FIELD_REF);
+      for (ty <- getTypesFromGenericSignature(field.signature, field.desc))
+        addDependency(classModule, ty, DependencyType.FIELD_REF);
     
       visitAnnotations(field.visibleAnnotations)
     }
@@ -93,8 +92,7 @@ class JavaDependencyParser {
   }
   
   def processMethod(currentModule: ClassModule, method: MethodNode) {
-    val descriptor = if (method.signature != null) method.signature else method.desc
-    for (ty <- getTypesFromGenericMethodSignature(descriptor))
+    for (ty <- getTypesFromGenericMethodSignature(method.signature, method.desc))
       addDependency(currentModule, ty, DependencyType.REF)
 
     visitAnnotations(method.visibleAnnotations)
@@ -103,65 +101,62 @@ class JavaDependencyParser {
         visitAnnotations(p)
     
     if (method.localVariables != null)
-      for (v <- method.localVariables.map(_.asInstanceOf[LocalVariableNode])) {
-        var descriptor = if (v.signature != null) v.signature else v.desc
-        for (ty <- getTypesFromGenericSignature(descriptor))
+      for (v <- method.localVariables.map(_.asInstanceOf[LocalVariableNode]))
+        for (ty <- getTypesFromGenericSignature(v.signature, v.desc))
           addDependency(currentModule, ty, DependencyType.REF)
-      }
     
     for (instr <- method.instructions.iterator) {
       instr match {
       case ti: TypeInsnNode =>
-        addDependencyToType(currentModule, ti.desc, DependencyType.REF)
+        addDependency(currentModule, TypeName.forDescriptor(ti.desc), DependencyType.REF)
       case fi: FieldInsnNode =>
-        addDependencyToType(currentModule, fi.owner, DependencyType.REF)
-        addDependency(currentModule, Type.getType(fi.desc), DependencyType.REF)
+        addDependency(currentModule, TypeName.forInternalClassName(fi.owner), DependencyType.REF)
+        addDependency(currentModule, TypeName.forDesc(fi.desc), DependencyType.REF)
       case mi: MethodInsnNode =>
-        addDependencyToType(currentModule, mi.owner, DependencyType.REF)
-        addDependency(currentModule, Type.getReturnType(mi.desc), DependencyType.REF)
+        addDependency(currentModule, TypeName.forInternalClassName(mi.owner), DependencyType.REF)
+        addDependency(currentModule, TypeName.forReturnType(mi.desc), DependencyType.REF)
         for (ty <- Type.getArgumentTypes(mi.desc))
-          addDependency(currentModule, ty, DependencyType.REF)
+          addDependency(currentModule, TypeName.forType(ty), DependencyType.REF)
       case mn: MultiANewArrayInsnNode =>
-        addDependency(currentModule, Type.getType(mn.desc), DependencyType.REF)
+        addDependency(currentModule, TypeName.forDesc(mn.desc), DependencyType.REF)
       case _ =>
         ()
       }
     }
   }
     
-  private def getVisitedModuleForType(name: String, typetype: TypeType) = {
+  private def getVisitedModuleForType(name: TypeName, typetype: TypeType) = {
     val module = getModuleForType(name)
     module.markAsProgramModule(typetype)
     module
   }
     
-  private def getModuleForType(className: String) =
+  private def getModuleForType(typeName: TypeName) =
     try {
-      getModuleByName(moduleNameForType(className), ModuleType.TYPE).asInstanceOf[ClassModule]
+      getModuleByName(typeName, ModuleType.TYPE).asInstanceOf[ClassModule]
     } catch {
-      case e => throw new Exception("failed to resolve module for type '" + className + "': " + e, e)
+      case e => throw new Exception("failed to resolve module for type '" + typeName + "': " + e, e)
     }
   
 
-  private def getPackageModuleByName(name: String): PackageModule =
+  private def getPackageModuleByName(name: TypeName): PackageModule =
     getModuleByName(name, ModuleType.PACKAGE) match {
       case m: PackageModule => m
       case m: ClassModule   => m.parent.get
     }
     
-  private def getModuleByName(name: String, moduleType: ModuleType) =
+  private def getModuleByName(name: TypeName, moduleType: ModuleType) =
     modules.getOrElse(name, { 
-      val module = moduleType.createModule(name, getParentModule(name))
+      val module = moduleType.createModule(name.name, getParentModule(name))
       modules = modules + (name -> module)
       module
     })
 
-  private def getParentModule(name: String) = {
-    name.lastIndexOf('.') match {
-      case -1    => _rootModule
-      case index => getPackageModuleByName(name.substring(0, index))
+  private def getParentModule(name: TypeName) =
+    name.parentName match {
+      case None    => _rootModule
+      case Some(n) => getPackageModuleByName(n)
     }
-  }
   
   private def stripEverythingAfter(s: String, ch: Char) =
     s.lastIndexOf(ch) match {
@@ -169,19 +164,13 @@ class JavaDependencyParser {
       case i  => s.substring(0, i)
     }
     
-  private def moduleNameForType(name: String) =
-    //Type.getType("L" + name + ";").getClassName
-    name.replace('/', '.')
-    
-  private def addDependencyToType(currentModule: ClassModule, typeName: String, dependencyType: DependencyType) {
-    //if (typeName.last.isDigit) return; // FIXME: hack to ignore classes of form "foo.Bar.1"
-	  
+  private def addDependency(currentModule: ClassModule, typeName: TypeName, dependencyType: DependencyType) {
     val target = getModuleForType(typeName)
     if (currentModule != target)
       currentModule.addDependency(target, dependencyType)
   }
-
-  private def addDependency(currentModule: ClassModule, toType: Type, dependencyType: DependencyType) {
-    addDependencyToType(currentModule, toType.getClassName, dependencyType)
+  
+  private def addDependency2(currentModule: ClassModule, typeName: Type, dependencyType: DependencyType) {
+    addDependency(currentModule, TypeName.forType(typeName), dependencyType)
   }
 }

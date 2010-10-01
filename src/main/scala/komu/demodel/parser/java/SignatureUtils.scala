@@ -4,33 +4,21 @@
 package komu.demodel.parser.java
 
 import scala.collection.mutable.ArrayBuffer
-import org.objectweb.asm.Type
+import komu.demodel.domain.TypeName
 
 object SignatureUtils {
 
-  def getTypesFromGenericMethodSignature(signature: String) =
+  def getTypesFromGenericMethodSignature(signature: String, descriptor: String): Iterable[TypeName] =
+    getTypesFromGenericMethodSignature(if (signature != null) signature else descriptor)
+
+  def getTypesFromGenericMethodSignature(signature: String): Iterable[TypeName] =
     new SignatureParser(signature).methodDescriptor()
     
-  def getTypesFromGenericSignature(signature: String): Iterable[Type] = {
+  def getTypesFromGenericSignature(signature: String, descriptor: String): Iterable[TypeName] =
+    getTypesFromGenericSignature(if (signature != null) signature else descriptor)
+    
+  def getTypesFromGenericSignature(signature: String): Iterable[TypeName] =
     new SignatureParser(signature).fieldDescriptor()
-    /*
-    if (signature.length == 0) return Nil
-        
-    try {
-      val parts = signature.split("[;<>\\(\\)]+")
-      val types = new ArrayBuffer[Type](parts.length)
-      for (part <- parts if part.length != 0 && !part.startsWith(".")) {
-        val typ = Type.getType((part + ";"))
-        if (!typ.getClassName.equals(""))
-          types += typ
-      }
-      return types
-    } catch {
-      case _ =>
-        throw new IllegalArgumentException("invalid signature: " + signature);
-    }
-    */
-  }
 }  
 
 // http://java.sun.com/docs/books/jvms/second_edition/html/ClassFile.doc.html#1169
@@ -60,16 +48,16 @@ class SignatureParser(descriptor: String) {
   //
   // GenericType:
   //   T <alias> ;
-  def fieldType(): Iterable[Type] =
+  def fieldType(): Iterable[TypeName] =
     lexer.read() match {
-      case 'B' => List(Type.BYTE_TYPE)
-      case 'C' => List(Type.CHAR_TYPE)
-      case 'D' => List(Type.DOUBLE_TYPE)
-      case 'F' => List(Type.FLOAT_TYPE)
-      case 'I' => List(Type.INT_TYPE)
-      case 'J' => List(Type.LONG_TYPE)
-      case 'S' => List(Type.SHORT_TYPE)
-      case 'Z' => List(Type.BOOLEAN_TYPE)
+      case 'B' => List(TypeName.BYTE)
+      case 'C' => List(TypeName.CHAR)
+      case 'D' => List(TypeName.DOUBLE)
+      case 'F' => List(TypeName.FLOAT)
+      case 'I' => List(TypeName.INT)
+      case 'J' => List(TypeName.LONG)
+      case 'S' => List(TypeName.SHORT)
+      case 'Z' => List(TypeName.BOOLEAN)
       case 'L' => objectType()
       case '[' => componentType()
       case 'T' => typeParameterName(); lexer.expect(';'); Nil
@@ -80,7 +68,7 @@ class SignatureParser(descriptor: String) {
   // ObjectType:
   //   L <className> ;
   def objectType() = {
-    val args = new ArrayBuffer[Type]
+    val args = new ArrayBuffer[TypeName]
     val name = new StringBuilder
     
     while (lexer.peek() != ';') {
@@ -98,7 +86,7 @@ class SignatureParser(descriptor: String) {
   }
   
   def genericArguments() = {
-    val types = new ArrayBuffer[Type]
+    val types = new ArrayBuffer[TypeName]
     
     lexer.expect('<')
 
@@ -127,12 +115,13 @@ class SignatureParser(descriptor: String) {
     sb.toString  
   }
   
-  def makeType(name: String) = Type.getType("L" + name + ";")
+  def makeType(name: String) = 
+    TypeName.forInternalClassName(name)
   
   // MethodDescriptor:
   //   ( ParameterDescriptor* ) ReturnDescriptor
-  def methodDescriptor(): Seq[Type] = {
-    val types = new ArrayBuffer[Type]
+  def methodDescriptor(): Seq[TypeName] = {
+    val types = new ArrayBuffer[TypeName]
     
     if (lexer.peek() == '<') { // generic method
       lexer.expect('<')
