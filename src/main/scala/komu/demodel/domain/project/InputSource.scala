@@ -7,4 +7,10 @@ import komu.demodel.utils.Resource
 
 trait InputSource {
   def withResources(thunk: Resource => Unit)
+  
+  def mapResources[T](thunk: Resource => T): Iterable[T] = {
+    val result = new scala.collection.mutable.ArrayBuffer[T]
+    withResources(r => result += thunk(r))
+    result
+  }
 }
