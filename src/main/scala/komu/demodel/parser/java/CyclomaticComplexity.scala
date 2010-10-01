@@ -16,11 +16,11 @@ object CyclomaticComplexity {
       override def newFrame(src: Frame) = 
         new Node(src)
       
-      override def newControlFlowEdge(src: Int, dst: Int) {
-        val s = getFrames()(src).asInstanceOf[Node]
-        val n = getFrames()(dst).asInstanceOf[Node]
-        s.addSuccessor(n)
-      }
+      override def newControlFlowEdge(src: Int, dst: Int) =
+        nodeAt(src).addSuccessor(nodeAt(dst))
+      
+      private def nodeAt(index: Int) = 
+        getFrames()(index).asInstanceOf[Node]
     }
     
     a.analyze(owner, mn);
