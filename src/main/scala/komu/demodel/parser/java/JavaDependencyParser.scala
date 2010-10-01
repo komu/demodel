@@ -6,6 +6,8 @@ package komu.demodel.parser.java
 import AccessUtils.getTypeFromAccessFlags
 import SignatureUtils.{ getTypesFromGenericMethodSignature, getTypesFromGenericSignature }
 
+import scala.collection.JavaConversions._
+
 import java.util.{ Map, TreeMap }
 
 import komu.demodel.domain._
@@ -13,6 +15,7 @@ import komu.demodel.domain.project._
 import komu.demodel.utils.Resource
 
 import org.objectweb.asm._
+import org.objectweb.asm.tree.{ ClassNode, MethodNode }
 
 object JavaDependencyParser {
   
@@ -45,7 +48,17 @@ class JavaDependencyParser {
   private def visitResource(resource: Resource) {
     val in = resource.open();
     try {
-      new ClassReader(in).accept(classVisitor, 0)
+      val reader = new ClassReader(in) 
+      reader.accept(classVisitor, 0)
+      
+      var classNode = new ClassNode
+      reader.accept(classNode, 0)
+      
+      for (method <- classNode.methods.map(_.asInstanceOf[MethodNode])) {
+        val complexity = CyclomaticComplexity.cyclomaticComplexity(classNode.name, method)
+        if (complexity >= 10)
+          println("complexity of " + classNode.name + "." + method.name + " is " + complexity)
+      }
     } finally {
       in.close()
     }
