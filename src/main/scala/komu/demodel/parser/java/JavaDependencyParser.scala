@@ -3,7 +3,6 @@
  */
 package komu.demodel.parser.java
 
-import AccessUtils.getTypeFromAccessFlags
 import SignatureUtils.{ getTypesFromGenericMethodSignature, getTypesFromGenericSignature }
 
 import scala.collection.JavaConversions._
@@ -15,6 +14,7 @@ import komu.demodel.utils.Resource
 
 import org.objectweb.asm._
 import org.objectweb.asm.tree._
+import RichNodeConversions._
 
 object JavaDependencyParser {
   
@@ -27,7 +27,7 @@ object JavaDependencyParser {
 }
 
 class JavaDependencyParser {
-
+  
   private val _rootModule = new PackageModule("<root>", None)
   private var modules = TreeMap[TypeName, Module]()
   
@@ -35,7 +35,7 @@ class JavaDependencyParser {
     println("parsing classes...")
     val classes = inputSource.mapResources(parseClassNode)
     println("processing classes...")
-    classes.foreach(processClass)
+    classes.foreach(c => processClass(c))
   }
 
   def rootModule = {
@@ -56,18 +56,19 @@ class JavaDependencyParser {
     }
   }
   
-  def processClass(classNode: ClassNode) {
-    val classModule = getVisitedModuleForType(TypeName.forInternalClassName(classNode.name), getTypeFromAccessFlags(classNode.access))
-    if (classNode.superName != null)
-      addDependency(classModule, TypeName.forInternalClassName(classNode.superName), DependencyType.INHERITANCE)
+  def processClass(classNode: RichClassNode) {
+    val classModule = getVisitedModuleForType(classNode.name, classNode.typeType)
+    
+    for (superName <- classNode.superName)
+      addDependency(classModule, superName, DependencyType.INHERITANCE)
       
-    for (interfaceName <- classNode.interfaces.map(_.asInstanceOf[String]))
-      addDependency(classModule, TypeName.forInternalClassName(interfaceName), DependencyType.INHERITANCE)
+    for (interfaceName <- classNode.interfaceNames)
+      addDependency(classModule, interfaceName, DependencyType.INHERITANCE)
       
-    for (method <- classNode.methods.map(_.asInstanceOf[MethodNode]))
+    for (method <- classNode.methods)
       processMethod(classModule, method)
     
-    for (field <- classNode.fields.map(_.asInstanceOf[FieldNode])) {
+    for (field <- classNode.fields) {
       for (ty <- getTypesFromGenericSignature(field.signature, field.desc))
         addDependency(classModule, ty, DependencyType.FIELD_REF);
     
@@ -87,25 +88,23 @@ class JavaDependencyParser {
     */
   }
   
-  def visitAnnotations(annotations: java.util.List[_]) {
+  def visitAnnotations(annotations: Iterable[_]) {
     // TODO
   }
   
-  def processMethod(currentModule: ClassModule, method: MethodNode) {
-    for (ty <- getTypesFromGenericMethodSignature(method.signature, method.desc))
+  def processMethod(currentModule: ClassModule, method: RichMethodNode) {
+    for (ty <- getTypesFromGenericMethodSignature(method.signature))
       addDependency(currentModule, ty, DependencyType.REF)
 
     visitAnnotations(method.visibleAnnotations)
-    if (method.visibleParameterAnnotations != null)
-      for (p <- method.visibleParameterAnnotations)
-        visitAnnotations(p)
+    for (p <- method.visibleParameterAnnotations)
+      visitAnnotations(p)
     
-    if (method.localVariables != null)
-      for (v <- method.localVariables.map(_.asInstanceOf[LocalVariableNode]))
-        for (ty <- getTypesFromGenericSignature(v.signature, v.desc))
-          addDependency(currentModule, ty, DependencyType.REF)
+    for (v <- method.localVariables)
+      for (ty <- getTypesFromGenericSignature(v.signature, v.desc))
+        addDependency(currentModule, ty, DependencyType.REF)
     
-    for (instr <- method.instructions.iterator) {
+    for (instr <- method.instructions) {
       instr match {
       case ti: TypeInsnNode =>
         addDependency(currentModule, TypeName.forDescriptor(ti.desc), DependencyType.REF)
