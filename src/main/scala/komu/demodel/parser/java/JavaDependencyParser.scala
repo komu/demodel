@@ -7,8 +7,7 @@ import AccessUtils.getTypeFromAccessFlags
 import SignatureUtils.{ getTypesFromGenericMethodSignature, getTypesFromGenericSignature }
 
 import scala.collection.JavaConversions._
-
-import java.util.{ Map, TreeMap }
+import scala.collection.immutable.{ Map, TreeMap }
 
 import komu.demodel.domain._
 import komu.demodel.domain.project._
@@ -30,10 +29,13 @@ object JavaDependencyParser {
 class JavaDependencyParser {
 
   private val _rootModule = new PackageModule("<root>", None)
-  private val modules = new TreeMap[String, Module]
+  private var modules = TreeMap[String, Module]()
   
   def parse(inputSource: InputSource) {
-    inputSource.withResources(visitResource)
+    println("parsing classes...")
+    val classes = inputSource.mapResources(parseClassNode)
+    println("processing classes...")
+    classes.foreach(processClass)
   }
 
   def rootModule = {
@@ -41,17 +43,6 @@ class JavaDependencyParser {
     _rootModule.normalizeTree();
     _rootModule.flushCaches();
     _rootModule
-  }
-    
-  private def visitResource(resource: Resource) {
-    val classNode = parseClassNode(resource)
-    processClass(classNode)
-      
-    for (method <- classNode.methods.map(_.asInstanceOf[MethodNode])) {
-      val complexity = CyclomaticComplexity.cyclomaticComplexity(classNode.name, method)
-      if (complexity >= 10)
-        println("complexity of " + classNode.name + "." + method.name + " is " + complexity)
-    }
   }
   
   private def parseClassNode(resource: Resource): ClassNode = {
@@ -87,6 +78,12 @@ class JavaDependencyParser {
     /*
     for (innerClass <- classNode.innerClasses.map(_.asInstanceOf[InnerClassNode])) {
       println("inner class: " + innerClass.innerName)
+    }
+    
+    for (method <- classNode.methods.map(_.asInstanceOf[MethodNode])) {
+      val complexity = CyclomaticComplexity.cyclomaticComplexity(classNode.name, method)
+      if (complexity >= 10)
+        println("complexity of " + classNode.name + "." + method.name + " is " + complexity)
     }
     */
   }
@@ -152,14 +149,12 @@ class JavaDependencyParser {
       case m: ClassModule   => m.parent.get
     }
     
-  private def getModuleByName(name: String, moduleType: ModuleType) = {
-    var module = modules.get(name)
-    if (module == null) {
-      module = moduleType.createModule(name, getParentModule(name))
-      modules.put(name, module)
-    }
-    module
-  }
+  private def getModuleByName(name: String, moduleType: ModuleType) =
+    modules.getOrElse(name, { 
+      val module = moduleType.createModule(name, getParentModule(name))
+      modules = modules + (name -> module)
+      module
+    })
 
   private def getParentModule(name: String) = {
     name.lastIndexOf('.') match {
@@ -175,6 +170,7 @@ class JavaDependencyParser {
     }
     
   private def moduleNameForType(name: String) =
+    //Type.getType("L" + name + ";").getClassName
     name.replace('/', '.')
     
   private def addDependencyToType(currentModule: ClassModule, typeName: String, dependencyType: DependencyType) {
